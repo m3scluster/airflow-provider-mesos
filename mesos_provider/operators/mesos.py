@@ -17,6 +17,8 @@
 # under the License.
 """Implements mesos operator"""
 import ast
+import requests
+
 from tempfile import TemporaryDirectory
 from typing import Dict, Iterable, List, Optional, Union
 
@@ -67,15 +69,13 @@ class MesosOperator(BaseOperator):
     def __init__(
         self,
         *,
-        mesos_master: str,
-        mesos_principal: str,
-        mesos_secret: str,
         image: str,
         command: Optional[Union[str, List[str]]] = None,
-        cpus: float = 1.0,
+        command_parameter: Optional[Union[str, List[str]]] = None,
+        cpus: float = None,
         environment: Optional[Dict] = None,
         force_pull: bool = False,
-        mem_limit: Optional[Union[float, str]] = None,
+        memlimit: Optional[Union[float, str]] = None,
         network_mode: Optional[str] = None,
         user: Optional[Union[str, int]] = None,
         volumes: Optional[List[str]] = None,
@@ -83,10 +83,8 @@ class MesosOperator(BaseOperator):
     ) -> None:
 
         super().__init__(**kwargs)
-        self.mesos_master = mesos_master
-        self.mesos_principal = mesos_principal
-        self.mesos_secret = mesos_secret
         self.command = command
+        self.command_parameter = command_parameter
         self.cpus = cpus
         self.environment = environment or {}
         self.force_pull = force_pull
@@ -96,4 +94,25 @@ class MesosOperator(BaseOperator):
         self.user = user
         self.volumes = volumes or []
 
-    #def execute(self, context) -> Optional[str]:
+
+    def execute(self, context) -> Optional[str]:
+        headers = {
+            "Content-Type": "application/json",
+            "cache-control": "no-cache",
+        }
+
+        data = {}
+
+        if self.command != None:
+            data["command"] = self.command
+
+        if self.image != None:
+            data["image"] = self.image
+
+        response = requests.request(method="POST", 
+                                    url="http://localhost:10000",
+                                    data=json.dumps(data), 
+                                    headers=headers)
+
+        self.log.debug(response)
+

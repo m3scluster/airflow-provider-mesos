@@ -1,2 +1,6 @@
+v0.1.1
+  - Add Mesos Executor
+
 v0.1.0:
-    Creation
+  Creation
+
