@@ -101,6 +101,7 @@ class AirflowMesosScheduler(MesosClient):
         cpus = self.task_cpu
         memlimit = self.task_mem
         image = self.mesos_slave_docker_image
+        container_type = "DOCKER"
 
         for resource in offer['resources']:
             if resource['name'] == "cpus":
@@ -153,6 +154,9 @@ class AirflowMesosScheduler(MesosClient):
                 if "network_mode" in executor_config:
                     network_mode = executor_config['network_mode']
 
+                if "container_type" in executor_config:
+                    container_type = executor_config['container_type']
+
             self.log.debug("Launching task %d using offer %s", tid, offer['id']['value'])
 
             task = {
@@ -175,7 +179,7 @@ class AirflowMesosScheduler(MesosClient):
                     'value': cmd,
                 },
                 'container': {
-                    'type': 'DOCKER',
+                    'type': container_type,
                     'volumes': [
                         {
                             'container_path': self.mesos_docker_volume_dag_container_path,
@@ -210,6 +214,15 @@ class AirflowMesosScheduler(MesosClient):
                     },
                 },
             }
+
+            # if the container would be UCR, we can attach tty
+            if container_type == "MESOS":
+                task["container"]["tty_info"] = {
+                    'window_size': {
+                        'rows': 80,
+                        'columns': 80,
+                    },
+                }
 
             option = {'Filters': {'RefuseSeconds': '0.5'}}
 

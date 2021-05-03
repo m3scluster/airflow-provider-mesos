@@ -18,6 +18,7 @@
 """Implements mesos operator"""
 import ast
 import requests
+import json
 
 from tempfile import TemporaryDirectory
 from typing import Dict, Iterable, List, Optional, Union
@@ -79,6 +80,8 @@ class MesosOperator(BaseOperator):
         network_mode: Optional[str] = None,
         user: Optional[Union[str, int]] = None,
         volumes: Optional[List[str]] = None,
+        airflow_scheduler_url: str = "http://localhost:10000",
+        container_type: str = "MESOS",
         **kwargs,
     ) -> None:
 
@@ -89,10 +92,12 @@ class MesosOperator(BaseOperator):
         self.environment = environment or {}
         self.force_pull = force_pull
         self.image = image
-        self.mem_limit = mem_limit
+        self.mem_limit = memlimit
         self.network_mode = network_mode
         self.user = user
         self.volumes = volumes or []
+        self.airflow_scheduler_url = airflow_scheduler_url
+        self.container_type = container_type
 
 
     def execute(self, context) -> Optional[str]:
@@ -102,6 +107,7 @@ class MesosOperator(BaseOperator):
         }
 
         data = {}
+        data["container_type"] = self.container_type
 
         if self.command != None:
             data["command"] = self.command
@@ -109,8 +115,10 @@ class MesosOperator(BaseOperator):
         if self.image != None:
             data["image"] = self.image
 
+        self.log.info(data)
+
         response = requests.request(method="POST", 
-                                    url="http://localhost:10000",
+                                    url=self.airflow_scheduler_url + "/v0/queue_command",
                                     data=json.dumps(data), 
                                     headers=headers)
 

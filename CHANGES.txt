@@ -1,5 +1,6 @@
 v0.1.1
   - Add Mesos Executor
+  - Make container type configurable and add TTY for UCR container
 
 v0.1.0:
   Creation
