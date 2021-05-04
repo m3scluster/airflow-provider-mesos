@@ -61,6 +61,7 @@ class AirflowMesosScheduler(MesosClient):
         self.task_mem = task_mem
         self.task_counter = 0
         self.task_key_map: Dict[str, str] = {}
+        self.tasks = {}
         self.log = executor.log
         self.client = executor.client
         self.executor = executor
@@ -157,11 +158,15 @@ class AirflowMesosScheduler(MesosClient):
                 if "container_type" in executor_config:
                     container_type = executor_config['container_type']
 
+                if "airflow_task_id" in executor_config:
+                    airflow_task_id = executor_config['airflow_task_id']
+                    
+
             self.log.debug("Launching task %d using offer %s", tid, offer['id']['value'])
 
             task = {
                 'name': "AirflowTask %d" % tid,
-                'task_id': {'value': str(tid)},
+                'task_id': {'value': "airflow_" + airflow_task_id + "." + str(tid)},
                 'agent_id': {'value': offer['agent_id']['value']},
                 'resources': [
                     {'name': 'cpus', 'type': 'SCALAR', 'scalar': {'value': self.task_cpu}},
@@ -255,6 +260,10 @@ class AirflowMesosScheduler(MesosClient):
         task_id = update["status"]["task_id"]["value"]
         task_state = update["status"]["state"]
 
+        if task_state == "TASK_RUNNING":
+            self.tasks[task_id] = update
+            self.log.info(update)
+
         self.log.info("Task %s is in state %s", task_id, task_state)
 
         try:
@@ -269,10 +278,12 @@ class AirflowMesosScheduler(MesosClient):
 
         if task_state == "TASK_FINISHED":
             self.result_queue.put((key, State.SUCCESS))
+            self.tasks.remove(task_id)
             return
 
         if task_state in ('TASK_LOST', 'TASK_KILLED', 'TASK_FAILED'):
             self.result_queue.put((key, State.FAILED))
+            self.tasks.remove(task_id)
             return
 
 

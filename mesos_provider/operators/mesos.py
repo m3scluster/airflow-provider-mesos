@@ -19,7 +19,9 @@
 import ast
 import requests
 import json
+import mesos.http
 
+from airflow.configuration import conf
 from tempfile import TemporaryDirectory
 from typing import Dict, Iterable, List, Optional, Union
 
@@ -99,6 +101,15 @@ class MesosOperator(BaseOperator):
         self.airflow_scheduler_url = airflow_scheduler_url
         self.container_type = container_type
 
+        if conf.getboolean('mesos', 'AUTHENTICATE'):
+            if not conf.get('mesos', 'DEFAULT_PRINCIPAL'):
+                self.log.error("Expecting authentication principal in the environment")
+                raise AirflowException("mesos.default_principal not provided in authenticated mode")
+            if not conf.get('mesos', 'DEFAULT_SECRET'):
+                self.log.error("Expecting authentication secret in the environment")
+                raise AirflowException("mesos.default_secret not provided in authenticated mode")
+            self.principal = conf.get('mesos', 'DEFAULT_PRINCIPAL')
+            self.secret = conf.get('mesos', 'DEFAULT_SECRET')             
 
     def execute(self, context) -> Optional[str]:
         headers = {
@@ -108,6 +119,7 @@ class MesosOperator(BaseOperator):
 
         data = {}
         data["container_type"] = self.container_type
+        data["airflow_task_id"] = self.task_id
 
         if self.command != None:
             data["command"] = self.command
@@ -115,7 +127,7 @@ class MesosOperator(BaseOperator):
         if self.image != None:
             data["image"] = self.image
 
-        self.log.info(data)
+        self.log.info(self)
 
         response = requests.request(method="POST", 
                                     url=self.airflow_scheduler_url + "/v0/queue_command",
@@ -123,4 +135,56 @@ class MesosOperator(BaseOperator):
                                     headers=headers)
 
         self.log.debug(response)
+
+    def attach_container_output(self):
+        """
+        Streams all output data (e.g. STDOUT/STDERR) to the
+        client from the agent.
+        """
+ 
+        message = {            
+            'type': 'ATTACH_CONTAINER_OUTPUT',
+            'attach_container_output': {
+                'container_id': self.container_id
+            }
+        }
+ 
+        req_extra_args = {
+            'stream': True,
+            'verify': False,
+            'additional_headers': {
+                'Content-Type': 'application/json',
+                'Accept': 'application/recordio',
+                'Message-Accept': 'application/json'
+            }
+        }
+ 
+        try:
+            resource = mesos.http.Resource(self.agent_url)
+            response = resource.request(
+                mesos.http.METHOD_POST,
+                data=json.dumps(message),
+                retry=False,
+                timeout=None,
+                auth=self.authentication_header(),
+                **req_extra_args)
+        except MesosHTTPException as e:
+            text = "I/O switchboard server was disabled for this container"
+            if e.response.status_code == 500 and e.response.text == text:
+                raise CLIException("Unable to attach to a task"
+                                   " launched without a TTY")
+        raise e
+
+    def authentication_header(self):
+        """
+        Return the BasicAuth authentication header
+        """
+        if (self.principal() is not None
+                and self._secret() is not None):
+            return requests.auth.HTTPBasicAuth(
+                self.principal(),
+                self.secret()
+            )
+        return None       
+        
 
