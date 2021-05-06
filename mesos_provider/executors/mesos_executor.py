@@ -31,7 +31,7 @@ from airflow.executors.base_executor import BaseExecutor, CommandType
 from airflow.models.taskinstance import TaskInstanceKey
 from airflow.utils.session import provide_session
 from airflow.utils.state import State
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 from flask_restful import Api, Resource
 
 FRAMEWORK_CONNID_PREFIX = 'mesos_framework_'
@@ -61,11 +61,11 @@ class AirflowMesosScheduler(MesosClient):
         self.task_mem = task_mem
         self.task_counter = 0
         self.task_key_map: Dict[str, str] = {}
-        self.tasks = {}
         self.log = executor.log
         self.client = executor.client
         self.executor = executor
         self.driver = None
+        self.tasks: Dict[str, str] = {}
 
         if not conf.get('mesos', 'DOCKER_IMAGE_SLAVE'):
             self.log.error("Expecting docker image for  mesos executor")
@@ -103,6 +103,9 @@ class AirflowMesosScheduler(MesosClient):
         memlimit = self.task_mem
         image = self.mesos_slave_docker_image
         container_type = "DOCKER"
+        airflow_dag_id = None
+        airflow_task_id = None
+        task_id = None
 
         for resource in offer['resources']:
             if resource['name'] == "cpus":
@@ -123,9 +126,6 @@ class AirflowMesosScheduler(MesosClient):
             key, cmd, executor_config = self.task_queue.get()
             tid = self.task_counter
             self.task_counter += 1
-
-            if key != None:
-                self.task_key_map[str(tid)] = key
 
             if executor_config != None:
                 self.log.debug(executor_config)
@@ -160,13 +160,20 @@ class AirflowMesosScheduler(MesosClient):
 
                 if "airflow_task_id" in executor_config:
                     airflow_task_id = executor_config['airflow_task_id']
-                    
 
-            self.log.debug("Launching task %d using offer %s", tid, offer['id']['value'])
+                if airflow_task_id is not None:
+                    # init tasks list for status_update
+                    self.tasks[airflow_task_id] = None
+                else:
+                    airflow_task_id = "airflow." + str(tid)
+
+            self.task_key_map[airflow_task_id] = key
+
+            self.log.info("Launching task %d using offer %s", tid, offer['id']['value'])
 
             task = {
                 'name': "AirflowTask %d" % tid,
-                'task_id': {'value': "airflow_" + airflow_task_id + "." + str(tid)},
+                'task_id': {'value': airflow_task_id},
                 'agent_id': {'value': offer['agent_id']['value']},
                 'resources': [
                     {'name': 'cpus', 'type': 'SCALAR', 'scalar': {'value': self.task_cpu}},
@@ -261,30 +268,30 @@ class AirflowMesosScheduler(MesosClient):
         task_state = update["status"]["state"]
 
         if task_state == "TASK_RUNNING":
+            self.log.debug(task_id)
             self.tasks[task_id] = update
-            self.log.info(update)
 
         self.log.info("Task %s is in state %s", task_id, task_state)
 
-        try:
-            key = self.task_key_map[task_id]
-
-        except KeyError:
-            # The map may not contain an item if the framework re-registered
-            # after a failover.
-            # Discard these tasks.
-            self.log.info("Unrecognised task key %s", task_id)
-            return
+        key = self.task_key_map[task_id]
 
         if task_state == "TASK_FINISHED":
             self.result_queue.put((key, State.SUCCESS))
-            self.tasks.remove(task_id)
+            self.tasks[task_id] = None
             return
 
         if task_state in ('TASK_LOST', 'TASK_KILLED', 'TASK_FAILED'):
             self.result_queue.put((key, State.FAILED))
-            self.tasks.remove(task_id)
+            self.tasks[task_id] = None
             return
+
+    def get_task_info(self, task_id):
+        """Return the container_info of the given task_id"""
+        if task_id in self.tasks:
+            return self.tasks[task_id]
+
+        return None
+
 
 
 class MesosExecutor(BaseExecutor):
@@ -404,6 +411,7 @@ class MesosExecutor(BaseExecutor):
         self.api = Api(self.app)
         self.stop = False
         self.app.add_url_rule("/v0/queue_command", "queue_command", self.queue_command, methods=["POST"])
+        self.app.add_url_rule("/v0/task/<task_id>", "task/<task_id>", self.get_task_info, methods=["GET"])
         self.app.run(port=10000, threaded=True)
 
     def sync(self) -> None:
@@ -461,7 +469,7 @@ class MesosExecutor(BaseExecutor):
         """
         Queue Command via API
 
-        Example: curl --header "Content-Type: application/json" -X POST -d '{ "command": "test" }' 127.0.0.1:10000/v0/queue_command
+        Example: curl --header "Content-Type: application/json" -X POST -d '{ "command": "test", "image": "alpine" }' 127.0.0.1:10000/v0/queue_command
         """
 
         data = json.loads(request.data)
@@ -478,14 +486,40 @@ class MesosExecutor(BaseExecutor):
             error = self.queue_command_error("Expecting command in queue_command call")
 
         if error != None:
-            print(error)
-            print(data)
             response = Response(error, status=400, headers={})
         else:
-            print(data)
             self.log.info('Queue task with command %s and %s', command, data )
             self.task_queue.put((None, command, data))
-            response = Response("test", status=200, headers={})
+            response = Response("Ok", status=200, headers={})
         # Send it
         return response        
+
+    def get_task_info(self, task_id):
+        """
+        Get Mesos TASK Info via API
+
+        Example: curl -X GET 127.0.0.1:10000/v0/task/<task_id>
+        """
+        task_info = self.driver.get_task_info(task_id)
+
+        response = Response(json.dumps(task_info), status=200, mimetype='application/json')
+        return response
+
+    def get_agent_address(agent_id, master, config):
+        """
+        Given a master and an agent id, return the agent address
+        by checking the /slaves endpoint of the master.
+        """
+        try:
+            agents = http.get_json(master, "slaves", config)["slaves"]
+
+        except Exception as exception:
+            raise AirflowException(
+                "Could not open '/slaves' endpoint at '{addr}': {error}"
+                .format(addr=master, error=exception)
+            )
+        for agent in agents:
+            if agent["id"] == agent_id:
+                return agent["pid"].split("@")[1]
+        raise AirflowException("Unable to find agent '{id}'".format(id=agent_id))
 

@@ -20,6 +20,7 @@ import ast
 import requests
 import json
 import mesos.http
+import time
 
 from airflow.configuration import conf
 from tempfile import TemporaryDirectory
@@ -118,8 +119,9 @@ class MesosOperator(BaseOperator):
         }
 
         data = {}
+        self.log.info(dir(self))
         data["container_type"] = self.container_type
-        data["airflow_task_id"] = self.task_id
+        data["airflow_task_id"] = "airflow." + self.dag_id + "." + self.task_id 
 
         if self.command != None:
             data["command"] = self.command
@@ -127,14 +129,32 @@ class MesosOperator(BaseOperator):
         if self.image != None:
             data["image"] = self.image
 
-        self.log.info(self)
+        self.log.info('Add task %s with command %s', self.task_id, self.command)
 
-        response = requests.request(method="POST", 
-                                    url=self.airflow_scheduler_url + "/v0/queue_command",
-                                    data=json.dumps(data), 
-                                    headers=headers)
+        response = requests.request(
+            method="POST", 
+            url=self.airflow_scheduler_url + "/v0/queue_command",
+            data=json.dumps(data), 
+            headers=headers
+        )
 
-        self.log.debug(response)
+        if response.status_code == 200:
+            task = None
+            i = 0
+            while task == None and i <= 10:
+                task_info = requests.request(
+                    method="GET", 
+                    url=self.airflow_scheduler_url + "/v0/task/" + data["airflow_task_id"],
+                    data=json.dumps(data),
+                    headers=headers
+                )
+                task = task_info.json()
+                time.sleep(5)
+                i += 1
+
+            self.container_id = task["status"]["container_status"]["container_id"]["value"]
+            self.attach_container_output()
+
 
     def attach_container_output(self):
         """
@@ -168,12 +188,40 @@ class MesosOperator(BaseOperator):
                 timeout=None,
                 auth=self.authentication_header(),
                 **req_extra_args)
-        except MesosHTTPException as e:
+        except Exception as e:
             text = "I/O switchboard server was disabled for this container"
             if e.response.status_code == 500 and e.response.text == text:
                 raise CLIException("Unable to attach to a task"
                                    " launched without a TTY")
         raise e
+
+        self.process_output_stream(response)
+
+    def process_output_stream(self, response):
+        """
+        Gets data streamed over the given response and places the
+        returned messages into our output_queue. Only expects to
+        receive data messages.
+
+        :param response: Response from an http post
+        :type response: requests.models.Response
+        """
+
+        try:
+            for chunk in response.iter_content(chunk_size=None):
+                records = self.decoder.decode(chunk)
+
+                for r in records:
+                    if r.get('type') and r['type'] == 'DATA':
+                        self.output_queue.put(r['data'])
+                        print(r['data'])
+        except Exception as e:
+            raise AirflowException(
+                "Error parsing output stream: {error}".format(error=e))
+
+        self.output_queue.join()
+        self.exit_event.set()
+    
 
     def authentication_header(self):
         """
