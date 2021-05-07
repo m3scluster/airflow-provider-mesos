@@ -155,13 +155,23 @@ class MesosOperator(BaseOperator):
             self.container_id = task["status"]["container_status"]["container_id"]["value"]
             self.attach_container_output()
 
+    def get_agent_address(self, agent_id):
+        """
+        Get Agent address of the given agent_id
+        """
+
+        agent_info = requests.request(
+            method="GET", 
+            url=self.airflow_scheduler_url + "/v0/agent/" + agent_id,
+            headers=headers
+        )
+        task = task_info.json()
 
     def attach_container_output(self):
         """
         Streams all output data (e.g. STDOUT/STDERR) to the
         client from the agent.
         """
- 
         message = {            
             'type': 'ATTACH_CONTAINER_OUTPUT',
             'attach_container_output': {
@@ -206,7 +216,6 @@ class MesosOperator(BaseOperator):
         :param response: Response from an http post
         :type response: requests.models.Response
         """
-
         try:
             for chunk in response.iter_content(chunk_size=None):
                 records = self.decoder.decode(chunk)
@@ -228,7 +237,7 @@ class MesosOperator(BaseOperator):
         Return the BasicAuth authentication header
         """
         if (self.principal() is not None
-                and self._secret() is not None):
+                and self.secret() is not None):
             return requests.auth.HTTPBasicAuth(
                 self.principal(),
                 self.secret()

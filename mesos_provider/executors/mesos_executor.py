@@ -19,6 +19,7 @@
 import threading
 import _thread
 import json
+import urllib3
 
 from queue import Queue
 from typing import Any, Dict, Optional
@@ -35,6 +36,8 @@ from flask import Flask, request, Response, jsonify
 from flask_restful import Api, Resource
 
 FRAMEWORK_CONNID_PREFIX = 'mesos_framework_'
+
+urllib3.disable_warnings()
 
 
 def get_framework_name():
@@ -372,10 +375,10 @@ class MesosExecutor(BaseExecutor):
             framework_id,
         )
 
-        master_urls = "https://" + master
+        self.master_urls = "https://" + master
 
         self.client = MesosClient(
-            mesos_urls=master_urls.split(','),
+            mesos_urls=self.master_urls.split(','),
             frameworkName=framework_name,
             frameworkId=None,
         )
@@ -412,6 +415,7 @@ class MesosExecutor(BaseExecutor):
         self.stop = False
         self.app.add_url_rule("/v0/queue_command", "queue_command", self.queue_command, methods=["POST"])
         self.app.add_url_rule("/v0/task/<task_id>", "task/<task_id>", self.get_task_info, methods=["GET"])
+        self.app.add_url_rule("/v0/agent/<agent_id>", "agent/<agent_id>", self.get_agent_address, methods=["GET"])
         self.app.run(port=10000, threaded=True)
 
     def sync(self) -> None:
@@ -505,21 +509,38 @@ class MesosExecutor(BaseExecutor):
         response = Response(json.dumps(task_info), status=200, mimetype='application/json')
         return response
 
-    def get_agent_address(agent_id, master, config):
+    def get_agent_address(self, agent_id):
         """
         Given a master and an agent id, return the agent address
         by checking the /slaves endpoint of the master.
         """
-        try:
-            agents = http.get_json(master, "slaves", config)["slaves"]
 
-        except Exception as exception:
-            raise AirflowException(
-                "Could not open '/slaves' endpoint at '{addr}': {error}"
-                .format(addr=master, error=exception)
+        http = urllib3.PoolManager()                                     
+        http_response = http.request('GET', self.master_urls + "/master/slaves", headers=self.authentication_header(), timeout=5)
+        data = http_response.data.decode('utf-8')
+
+        if data is not None:
+            data = json.loads(data)
+            size = len(data["slaves"])
+            for agent in data["slaves"]:
+                if agent["id"] == agent_id:
+                    data = { 'hostname': agent["hostname"], 'port': str(agent["port"]) }
+                    response = Response(json.dumps(data), status=200, mimetype='application/json')
+                    return response
+
+        response = Response(None, status=200, mimetype='application/json')
+        return response
+
+
+    def authentication_header(self):
+        """
+        Return the BasicAuth authentication header
+        """
+        if (self.client.principal is not None
+            and self.client.secret is not None):
+            headers = urllib3.make_headers(
+                basic_auth=self.client.principal + ":" + self.client.secret
             )
-        for agent in agents:
-            if agent["id"] == agent_id:
-                return agent["pid"].split("@")[1]
-        raise AirflowException("Unable to find agent '{id}'".format(id=agent_id))
+            return headers
+        return None
 
