@@ -19,12 +19,13 @@
 import ast
 import requests
 import json
-import mesos.http
 import time
+import urllib3
 
 from airflow.configuration import conf
 from tempfile import TemporaryDirectory
 from typing import Dict, Iterable, List, Optional, Union
+from requests.auth import HTTPBasicAuth
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
@@ -153,19 +154,19 @@ class MesosOperator(BaseOperator):
                 i += 1
 
             self.container_id = task["status"]["container_status"]["container_id"]["value"]
+            self.agent_id = task["status"]["agent_id"]["value"]
             self.attach_container_output()
 
-    def get_agent_address(self, agent_id):
+    def get_agent_address(self):
         """
         Get Agent address of the given agent_id
         """
-
         agent_info = requests.request(
             method="GET", 
-            url=self.airflow_scheduler_url + "/v0/agent/" + agent_id,
-            headers=headers
+            url=self.airflow_scheduler_url + "/v0/agent/" + self.agent_id,
+            headers=self.authentication_header(),
         )
-        task = task_info.json()
+        return agent_info.json()
 
     def attach_container_output(self):
         """
@@ -181,31 +182,36 @@ class MesosOperator(BaseOperator):
  
         req_extra_args = {
             'stream': True,
-            'verify': False,
-            'additional_headers': {
-                'Content-Type': 'application/json',
-                'Accept': 'application/recordio',
-                'Message-Accept': 'application/json'
-            }
+            'Verify': False,
         }
- 
-        try:
-            resource = mesos.http.Resource(self.agent_url)
-            response = resource.request(
-                mesos.http.METHOD_POST,
-                data=json.dumps(message),
-                retry=False,
-                timeout=None,
-                auth=self.authentication_header(),
-                **req_extra_args)
-        except Exception as e:
-            text = "I/O switchboard server was disabled for this container"
-            if e.response.status_code == 500 and e.response.text == text:
-                raise CLIException("Unable to attach to a task"
-                                   " launched without a TTY")
-        raise e
 
-        self.process_output_stream(response)
+        auth = self.authentication_header()
+
+        headers = {
+            'Content-Type': 'application/recordio',
+            'Message-Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Connection': 'close',
+            'Transfer-Encoding': 'chunked',
+            'Authorization': auth["authorization"]
+        }
+
+        agent_info = self.get_agent_address()
+
+        try:
+            task_info = requests.request(
+                method="POST", 
+                url="https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1",
+                data=json.dumps(message),
+                verify=False,
+                headers=headers
+            )
+
+        except Exception as e:
+            raise AirflowException(
+                "Error parsing task info: {error}".format(error=e))
+
+        self.process_output_stream(task_info)
 
     def process_output_stream(self, response):
         """
@@ -222,6 +228,7 @@ class MesosOperator(BaseOperator):
 
                 for r in records:
                     if r.get('type') and r['type'] == 'DATA':
+                        print(r['data'])
                         self.output_queue.put(r['data'])
                         print(r['data'])
         except Exception as e:
@@ -236,12 +243,11 @@ class MesosOperator(BaseOperator):
         """
         Return the BasicAuth authentication header
         """
-        if (self.principal() is not None
-                and self.secret() is not None):
-            return requests.auth.HTTPBasicAuth(
-                self.principal(),
-                self.secret()
+        if (self.principal is not None
+                and self.secret is not None):
+            return urllib3.make_headers(
+                basic_auth=self.principal + ":" + self.secret
             )
-        return None       
-        
+
+        return None
 
