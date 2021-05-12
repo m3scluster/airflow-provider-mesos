@@ -180,36 +180,25 @@ class MesosOperator(BaseOperator):
             }
         }
  
-        req_extra_args = {
-            'stream': True,
-            'Verify': False,
-        }
-
         auth = self.authentication_header()
 
         headers = {
             'Content-Type': 'application/recordio',
             'Message-Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Connection': 'close',
-            'Transfer-Encoding': 'chunked',
             'Authorization': auth["authorization"]
         }
 
         agent_info = self.get_agent_address()
 
-        try:
-            task_info = requests.request(
-                method="POST", 
-                url="https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1",
-                data=json.dumps(message),
-                verify=False,
-                headers=headers
-            )
-
-        except Exception as e:
-            raise AirflowException(
-                "Error parsing task info: {error}".format(error=e))
+        http = urllib3.PoolManager()
+        task_info = http.request(
+            method="POST", 
+            url="https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1",
+            body=json.dumps(message),
+            preload_content=False,
+            headers=headers
+        )
 
         self.process_output_stream(task_info)
 
@@ -223,20 +212,13 @@ class MesosOperator(BaseOperator):
         :type response: requests.models.Response
         """
         try:
-            for chunk in response.iter_content(chunk_size=None):
-                records = self.decoder.decode(chunk)
+            for chunk in response.stream():
+                print(chunk.decode())
 
-                for r in records:
-                    if r.get('type') and r['type'] == 'DATA':
-                        print(r['data'])
-                        self.output_queue.put(r['data'])
-                        print(r['data'])
         except Exception as e:
             raise AirflowException(
                 "Error parsing output stream: {error}".format(error=e))
 
-        self.output_queue.join()
-        self.exit_event.set()
     
 
     def authentication_header(self):
