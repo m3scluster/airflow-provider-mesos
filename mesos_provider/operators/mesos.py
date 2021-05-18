@@ -21,6 +21,8 @@ import requests
 import json
 import time
 import urllib3
+import base64
+import re
 
 from airflow.configuration import conf
 from tempfile import TemporaryDirectory
@@ -120,7 +122,6 @@ class MesosOperator(BaseOperator):
         }
 
         data = {}
-        self.log.info(dir(self))
         data["container_type"] = self.container_type
         data["airflow_task_id"] = "airflow." + self.dag_id + "." + self.task_id 
 
@@ -176,25 +177,26 @@ class MesosOperator(BaseOperator):
         message = {            
             'type': 'ATTACH_CONTAINER_OUTPUT',
             'attach_container_output': {
-                'container_id': self.container_id
+                'container_id': {'value': self.container_id }
             }
         }
  
         auth = self.authentication_header()
 
         headers = {
-            'Content-Type': 'application/recordio',
-            'Message-Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Accept': 'application/recordio',
+            'Message-Accept': 'application/json',
             'Authorization': auth["authorization"]
         }
 
         agent_info = self.get_agent_address()
 
         http = urllib3.PoolManager()
+        print("https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1")
         task_info = http.request(
             method="POST", 
-            url="https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1",
+            url="https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1/",
             body=json.dumps(message),
             preload_content=False,
             headers=headers
@@ -213,7 +215,13 @@ class MesosOperator(BaseOperator):
         """
         try:
             for chunk in response.stream():
-                print(chunk.decode())
+                clean = re.sub(r'.*\n', "", chunk.decode('utf-8'))
+                data = json.loads(clean)
+                if "type" in data:
+                    if data["type"] == "DATA":
+                        message = data["data"]["data"]
+                        decode = base64.b64decode(message)
+                        self.log.info("%s", decode)
 
         except Exception as e:
             raise AirflowException(

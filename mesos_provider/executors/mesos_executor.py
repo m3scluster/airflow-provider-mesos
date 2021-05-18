@@ -34,10 +34,14 @@ from airflow.utils.session import provide_session
 from airflow.utils.state import State
 from flask import Flask, request, Response, jsonify
 from flask_restful import Api, Resource
+from waitress import serve
+from threading import Thread
 
 FRAMEWORK_CONNID_PREFIX = 'mesos_framework_'
 
 urllib3.disable_warnings()
+
+app = Flask(__name__)
 
 
 def get_framework_name():
@@ -410,13 +414,13 @@ class MesosExecutor(BaseExecutor):
         self.mesos_framework.start()
 
         # start the framework api
-        self.app = Flask(__name__)
-        self.api = Api(self.app)
         self.stop = False
-        self.app.add_url_rule("/v0/queue_command", "queue_command", self.queue_command, methods=["POST"])
-        self.app.add_url_rule("/v0/task/<task_id>", "task/<task_id>", self.get_task_info, methods=["GET"])
-        self.app.add_url_rule("/v0/agent/<agent_id>", "agent/<agent_id>", self.get_agent_address, methods=["GET"])
-        self.app.run(port=10000, threaded=True)
+        app.add_url_rule("/v0/queue_command", "queue_command", self.queue_command, methods=["POST"])
+        app.add_url_rule("/v0/task/<task_id>", "task/<task_id>", self.get_task_info, methods=["GET"])
+        app.add_url_rule("/v0/agent/<agent_id>", "agent/<agent_id>", self.get_agent_address, methods=["GET"])
+
+        flaskThread = Thread(target=serve, args=[app], daemon=True, kwargs={'port':'10000'}).start()        
+
 
     def sync(self) -> None:
         """Updates states of the tasks."""
@@ -427,6 +431,8 @@ class MesosExecutor(BaseExecutor):
         while not self.result_queue.empty():
             results = self.result_queue.get()
             key, state = results
+            if key is None:
+                return
             if state == "success":
                 self.log.info("tasks successfull %s", key)
                 self.task_queue.task_done()
@@ -478,7 +484,7 @@ class MesosExecutor(BaseExecutor):
 
         data = json.loads(request.data)
         error, image, command = None, None, None
-        
+
         if "image" in data:
             image = data['image']
         else:
