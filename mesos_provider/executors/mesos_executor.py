@@ -108,7 +108,6 @@ class AirflowMesosScheduler(MesosClient):
         force_pull = "true"
         cpus = self.task_cpu
         memlimit = self.task_mem
-        image = self.mesos_slave_docker_image
         container_type = "DOCKER"
         airflow_dag_id = None
         airflow_task_id = None
@@ -136,7 +135,10 @@ class AirflowMesosScheduler(MesosClient):
 
             if executor_config != None:
                 self.log.debug(executor_config)
-                image = executor_config['image']
+                if "image" in executor_config:
+                    image = executor_config['image']
+                else:
+                    image = self.mesos_slave_docker_image
 
                 if "command_parameter" in executor_config:
                     command_parameter = executor_config['command_parameter']
@@ -414,10 +416,9 @@ class MesosExecutor(BaseExecutor):
         self.mesos_framework.start()
 
         # start the framework api
-        self.stop = False
-        app.add_url_rule("/v0/queue_command", "queue_command", self.queue_command, methods=["POST"])
-        app.add_url_rule("/v0/task/<task_id>", "task/<task_id>", self.get_task_info, methods=["GET"])
-        app.add_url_rule("/v0/agent/<agent_id>", "agent/<agent_id>", self.get_agent_address, methods=["GET"])
+        app.add_url_rule("/v0/queue_command", "queue_command", self.api_queue_command, methods=["POST"])
+        app.add_url_rule("/v0/task/<task_id>", "task/<task_id>", self.api_get_task_info, methods=["GET"])
+        app.add_url_rule("/v0/agent/<agent_id>", "agent/<agent_id>", self.api_get_agent_address, methods=["GET"])
 
         flaskThread = Thread(target=serve, args=[app], daemon=True, kwargs={'port':'10000'}).start()        
 
@@ -469,13 +470,13 @@ class MesosExecutor(BaseExecutor):
         """Terminate the executor is not doing anything."""
         self.end()
 
-    def queue_command_error(self, message):
+    def api_queue_command_error(self, message):
         """Error message handling for queue_command"""
         self.log.error(message)
 
         return message
 
-    def queue_command(self):
+    def api_queue_command(self):
         """
         Queue Command via API
 
@@ -488,12 +489,12 @@ class MesosExecutor(BaseExecutor):
         if "image" in data:
             image = data['image']
         else:
-            error = self.queue_command_error("Expecting image in queue_command call")
+            error = self.api_queue_command_error("Expecting image in queue_command call")
 
         if "command" in data:
             command = data['command']
         else:
-            error = self.queue_command_error("Expecting command in queue_command call")
+            error = self.api_queue_command_error("Expecting command in queue_command call")
 
         if error != None:
             response = Response(error, status=400, headers={})
@@ -504,7 +505,7 @@ class MesosExecutor(BaseExecutor):
         # Send it
         return response        
 
-    def get_task_info(self, task_id):
+    def api_get_task_info(self, task_id):
         """
         Get Mesos TASK Info via API
 
@@ -515,7 +516,7 @@ class MesosExecutor(BaseExecutor):
         response = Response(json.dumps(task_info), status=200, mimetype='application/json')
         return response
 
-    def get_agent_address(self, agent_id):
+    def api_get_agent_address(self, agent_id):
         """
         Given a master and an agent id, return the agent address
         by checking the /slaves endpoint of the master.
