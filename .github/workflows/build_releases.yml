@@ -22,13 +22,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          export VERSION=${GITHUB_REF#refs/*/}
           python -m pip install --upgrade pip
           pip install build            
 
       - name: Build package
         run: |
           export VERSION=${GITHUB_REF#refs/*/}
+          if [[ $VERSION =~ ^master$ ]]; then
+            export VERSION="0.dev"
+          fi          
           python -m build \
 
       - name: Publish package
