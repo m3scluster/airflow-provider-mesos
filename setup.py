@@ -16,7 +16,7 @@ except UnicodeDecodeError:
         README = f.read()
 
 
-with open('pkg_info.json') as fp:
+with open(os.path.join(here, 'pkg_info.json')) as fp:
     _info = json.load(fp)        
 
 setup(
