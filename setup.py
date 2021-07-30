@@ -5,6 +5,7 @@ except ImportError:
 
 from distutils.command.install import install
 import os
+import json
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
@@ -18,19 +19,18 @@ except UnicodeDecodeError:
     with open(os.path.join(here, 'CHANGES.txt'), encoding='utf-8') as f:
         CHANGES = f.read()
 
+
+with open('pkg_info.json') as fp:
+    _info = json.load(fp)        
+
 setup(
-    name='airflow-provider-mesos',
-    version="0.1.2",
+    name='avmesos_airflow_provider',
+    version=_info['version'],    
     description='Apache Mesos Provider',
     long_description=README,
     long_description_content_type='text/markdown',
-    entry_points={
-        "apache_airflow_provider": [
-            "provider_info=mesos_provider.__init__:get_provider_info"
-        ]
-    },
     license='Apache License 2.0',
-    packages=['mesos_provider'],
+    packages=find_packages(),
     install_requires=['apache-airflow>=2.0'],
     setup_requires=['avmesos'],
     author='Andreas Peters',

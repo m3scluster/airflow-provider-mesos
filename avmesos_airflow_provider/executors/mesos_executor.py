@@ -87,11 +87,11 @@ class AirflowMesosScheduler(MesosClient):
         self.mesos_docker_sock = conf.get('mesos', 'DOCKER_SOCK')
         self.core_sql_alchemy_conn = conf.get('core', 'SQL_ALCHEMY_CONN')
         self.core_fernet_key = conf.get('core', 'FERNET_KEY')
+        self.logging_logging_level = conf.get('logging', 'LOGGING_LEVEL')
         self.command_shell = str(conf.get('mesos', 'COMMAND_SHELL', fallback=True)).lower()
 
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
-        self.log.debug('MESOS OFFER')
         for i, offer in enumerate(offers):
             if i == 0:
                 self.run_job(offer)
@@ -123,10 +123,12 @@ class AirflowMesosScheduler(MesosClient):
             "Received offer %s with cpus: %s and mem: %s", offer['id']['value'], offer_cpus, offer_mem
         )
 
+        remaining_cpus = offer_cpus
+        remaining_mem = offer_mem
         while (
             (not self.task_queue.empty())
-            and offer_cpus >= cpus
-            and offer_mem >= memlimit
+            and remaining_cpus >= self.task_cpu
+            and remaining_mem >= self.task_mem
         ):
 
             key, cmd, executor_config = self.task_queue.get()
@@ -194,10 +196,10 @@ class AirflowMesosScheduler(MesosClient):
                         'variables': [
                             {'name': 'AIRFLOW__CORE__SQL_ALCHEMY_CONN', 'value': self.core_sql_alchemy_conn},
                             {'name': 'AIRFLOW__CORE__FERNET_KEY', 'value': self.core_fernet_key},
-                            {'name': 'AIRFLOW__CORE__LOGGING_LEVEL', 'value': 'DEBUG'},
+                            {'name': 'AIRFLOW__LOGGING__LOGGING_LEVEL', 'value': self.logging_logging_level},
                         ]
                     },
-                    'value': cmd,
+                    'value': " ".join(cmd),
                 },
                 'container': {
                     'type': container_type,
@@ -248,8 +250,8 @@ class AirflowMesosScheduler(MesosClient):
             option = {'Filters': {'RefuseSeconds': '0.5'}}
 
             tasks.append(task)
-            offer_cpus -= self.task_cpu
-            offer_mem -= self.task_mem
+            remaining_cpus -= self.task_cpu
+            remaining_mem -= self.task_mem
         mesos_offer.accept(tasks, option)
 
     @provide_session
@@ -347,7 +349,7 @@ class MesosExecutor(BaseExecutor):
         framework_id = None
         framework_role = conf.get('mesos', 'FRAMEWORK_ROLE', fallback="marathon")
 
-        task_cpu = conf.getint('mesos', 'TASK_CPU', fallback=1)
+        task_cpu = conf.getfloat('mesos', 'TASK_CPU', fallback=0.1)
         task_memory = conf.getint('mesos', 'TASK_MEMORY', fallback=256)
 
         if conf.getboolean('mesos', 'CHECKPOINT'):
@@ -485,6 +487,8 @@ class MesosExecutor(BaseExecutor):
 
         data = json.loads(request.data)
         error, image, command = None, None, None
+
+        self.log.info("HHHHH")
 
         if "image" in data:
             image = data['image']

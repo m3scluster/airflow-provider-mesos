@@ -33,7 +33,6 @@ from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
-
 # pylint: disable=too-many-instance-attributes
 class MesosOperator(BaseOperator):
     """
@@ -72,7 +71,6 @@ class MesosOperator(BaseOperator):
     """
 
     # pylint: disable=too-many-arguments,too-many-locals
-    @apply_defaults
     def __init__(
         self,
         *,
@@ -116,6 +114,8 @@ class MesosOperator(BaseOperator):
             self.secret = conf.get('mesos', 'DEFAULT_SECRET')             
 
     def execute(self, context) -> Optional[str]:
+        print('Add MesosTask %s with command %s', self.task_id, self.command)
+        self.log.info('Add MesosTask %s with command %s', self.task_id, self.command)
         headers = {
             "Content-Type": "application/json",
             "cache-control": "no-cache",
@@ -131,7 +131,8 @@ class MesosOperator(BaseOperator):
         if self.image != None:
             data["image"] = self.image
 
-        self.log.info('Add task %s with command %s', self.task_id, self.command)
+        data["container_type"] = "MESOS"
+
 
         response = requests.request(
             method="POST", 
@@ -156,20 +157,20 @@ class MesosOperator(BaseOperator):
 
             self.container_id = task["status"]["container_status"]["container_id"]["value"]
             self.agent_id = task["status"]["agent_id"]["value"]
-            self.attach_container_output()
+            self._attach_container_output()
 
-    def get_agent_address(self):
+    def _get_agent_address(self):
         """
         Get Agent address of the given agent_id
         """
         agent_info = requests.request(
             method="GET", 
             url=self.airflow_scheduler_url + "/v0/agent/" + self.agent_id,
-            headers=self.authentication_header(),
+            headers=self._authentication_header(),
         )
         return agent_info.json()
 
-    def attach_container_output(self):
+    def _attach_container_output(self):
         """
         Streams all output data (e.g. STDOUT/STDERR) to the
         client from the agent.
@@ -181,7 +182,7 @@ class MesosOperator(BaseOperator):
             }
         }
  
-        auth = self.authentication_header()
+        auth = self._authentication_header()
 
         headers = {
             'Content-Type': 'application/json',
@@ -190,7 +191,7 @@ class MesosOperator(BaseOperator):
             'Authorization': auth["authorization"]
         }
 
-        agent_info = self.get_agent_address()
+        agent_info = self._get_agent_address()
 
         http = urllib3.PoolManager()
         print("https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1")
@@ -202,9 +203,9 @@ class MesosOperator(BaseOperator):
             headers=headers
         )
 
-        self.process_output_stream(task_info)
+        self._process_output_stream(task_info)
 
-    def process_output_stream(self, response):
+    def _process_output_stream(self, response):
         """
         Gets data streamed over the given response and places the
         returned messages into our output_queue. Only expects to
@@ -229,7 +230,7 @@ class MesosOperator(BaseOperator):
 
     
 
-    def authentication_header(self):
+    def _authentication_header(self):
         """
         Return the BasicAuth authentication header
         """
@@ -240,4 +241,8 @@ class MesosOperator(BaseOperator):
             )
 
         return None
+
+    def on_kill(self) -> None:
+        self.log.info("TODO: mesos operator on_kill")
+    
 
