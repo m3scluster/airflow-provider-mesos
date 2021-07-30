@@ -15,13 +15,9 @@ except UnicodeDecodeError:
     with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
         README = f.read()
 
-
-with open(os.path.join(here, 'pkg_info.json')) as fp:
-    _info = json.load(fp)        
-
 setup(
     name='avmesos_airflow_provider',
-    version=_info['version'],    
+    version=os.environ['VERSION'],
     description='Apache Mesos Provider',
     long_description=README,
     long_description_content_type='text/markdown',
