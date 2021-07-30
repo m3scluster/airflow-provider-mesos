@@ -11,13 +11,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 try:
     with open(os.path.join(here, 'README.md')) as f:
         README = f.read()
-    with open(os.path.join(here, 'CHANGES.txt')) as f:
-        CHANGES = f.read()
 except UnicodeDecodeError:
     with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
         README = f.read()
-    with open(os.path.join(here, 'CHANGES.txt'), encoding='utf-8') as f:
-        CHANGES = f.read()
 
 
 with open('pkg_info.json') as fp:
