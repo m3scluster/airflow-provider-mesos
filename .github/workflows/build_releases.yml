@@ -28,7 +28,9 @@ jobs:
       - name: Build package
         run: |
           VERSION=${GITHUB_REF#refs/*/}
+          ls -l
           echo "{ \"version\": \"$VERSION\" }" > pkg_info.json
+          cat pkg_info.json
           python -m build \
 
       - name: Publish package
