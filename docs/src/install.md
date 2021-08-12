@@ -17,4 +17,3 @@ vim airflow.cfg
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
 
 ```
-

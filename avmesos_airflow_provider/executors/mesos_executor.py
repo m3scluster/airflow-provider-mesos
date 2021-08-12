@@ -1,3 +1,6 @@
+"""
+Apache Mesos Provider to scheduler Apache Airflow DAG's under Mesos.
+"""
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -16,13 +19,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from queue import Queue
+from typing import Any, Dict, Optional
+from threading import Thread
+
 import threading
-import _thread
 import json
 import urllib3
 
-from queue import Queue
-from typing import Any, Dict, Optional
 
 from avmesos.client import MesosClient
 
@@ -32,12 +36,10 @@ from airflow.executors.base_executor import BaseExecutor, CommandType
 from airflow.models.taskinstance import TaskInstanceKey
 from airflow.utils.session import provide_session
 from airflow.utils.state import State
-from flask import Flask, request, Response, jsonify
-from flask_restful import Api, Resource
+from flask import Flask, request, Response
 from waitress import serve
-from threading import Thread
 
-FRAMEWORK_CONNID_PREFIX = 'mesos_framework_'
+FRAMEWORK_CONNID_PREFIX = "mesos_framework_"
 
 urllib3.disable_warnings()
 
@@ -46,7 +48,7 @@ app = Flask(__name__)
 
 def get_framework_name():
     """Get the mesos framework name if its set in airflow.cfg"""
-    return conf.get('mesos', 'FRAMEWORK_NAME')
+    return conf.get("mesos", "FRAMEWORK_NAME")
 
 
 # pylint: disable=too-many-nested-blocks
@@ -61,7 +63,9 @@ class AirflowMesosScheduler(MesosClient):
     """
 
     # pylint: disable=super-init-not-called
-    def __init__(self, executor, task_queue, result_queue, task_cpu: int = 1, task_mem: int = 256):
+    def __init__(
+        self, executor, task_queue, result_queue, task_cpu: int = 1, task_mem: int = 256
+    ):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.task_cpu = task_cpu
@@ -74,30 +78,42 @@ class AirflowMesosScheduler(MesosClient):
         self.driver = None
         self.tasks: Dict[str, str] = {}
 
-        if not conf.get('mesos', 'DOCKER_IMAGE_SLAVE'):
+        if not conf.get("mesos", "DOCKER_IMAGE_SLAVE"):
             self.log.error("Expecting docker image for  mesos executor")
-            raise AirflowException("mesos.slave_docker_image not provided for mesos executor")
+            raise AirflowException(
+                "mesos.slave_docker_image not provided for mesos executor"
+            )
 
-        self.mesos_slave_docker_image = conf.get('mesos', 'DOCKER_IMAGE_SLAVE')
-        self.mesos_docker_volume_driver = conf.get('mesos', 'DOCKER_VOLUME_DRIVER')
-        self.mesos_docker_volume_dag_name = conf.get('mesos', 'DOCKER_VOLUME_DAG_NAME')
-        self.mesos_docker_volume_dag_container_path = conf.get('mesos', 'DOCKER_VOLUME_DAG_CONTAINER_PATH')
-        self.mesos_docker_volume_logs_name = conf.get('mesos', 'DOCKER_VOLUME_LOGS_NAME')
-        self.mesos_docker_volume_logs_container_path = conf.get('mesos', 'DOCKER_VOLUME_LOGS_CONTAINER_PATH')
-        self.mesos_docker_sock = conf.get('mesos', 'DOCKER_SOCK')
-        self.core_sql_alchemy_conn = conf.get('core', 'SQL_ALCHEMY_CONN')
-        self.core_fernet_key = conf.get('core', 'FERNET_KEY')
-        self.logging_logging_level = conf.get('logging', 'LOGGING_LEVEL')
-        self.command_shell = str(conf.get('mesos', 'COMMAND_SHELL', fallback=True)).lower()
+        self.mesos_slave_docker_image = conf.get("mesos", "DOCKER_IMAGE_SLAVE")
+        self.mesos_docker_volume_driver = conf.get("mesos", "DOCKER_VOLUME_DRIVER")
+        self.mesos_docker_volume_dag_name = conf.get("mesos", "DOCKER_VOLUME_DAG_NAME")
+        self.mesos_docker_volume_dag_container_path = conf.get(
+            "mesos", "DOCKER_VOLUME_DAG_CONTAINER_PATH"
+        )
+        self.mesos_docker_volume_logs_name = conf.get(
+            "mesos", "DOCKER_VOLUME_LOGS_NAME"
+        )
+        self.mesos_docker_volume_logs_container_path = conf.get(
+            "mesos", "DOCKER_VOLUME_LOGS_CONTAINER_PATH"
+        )
+        self.mesos_docker_sock = conf.get("mesos", "DOCKER_SOCK")
+        self.core_sql_alchemy_conn = conf.get("core", "SQL_ALCHEMY_CONN")
+        self.core_fernet_key = conf.get("core", "FERNET_KEY")
+        self.logging_logging_level = conf.get("logging", "LOGGING_LEVEL")
+        self.command_shell = str(
+            conf.get("mesos", "COMMAND_SHELL", fallback=True)
+        ).lower()
 
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
         for i, offer in enumerate(offers):
             if i == 0:
                 self.run_job(offer)
-            offer.decline()
+            else:
+              offer.decline()
             i += 1
 
+    # pylint: disable=too-many-branches
     def run_job(self, mesos_offer):
         """Start a queued Airflow task in Mesos"""
         offer = mesos_offer.get_offer()
@@ -106,25 +122,30 @@ class AirflowMesosScheduler(MesosClient):
         offer_cpus = 0
         offer_mem = 0
         force_pull = "true"
-        cpus = self.task_cpu
-        memlimit = self.task_mem
         container_type = "DOCKER"
-        airflow_dag_id = None
         airflow_task_id = None
-        task_id = None
 
-        for resource in offer['resources']:
-            if resource['name'] == "cpus":
-                offer_cpus += resource['scalar']['value']
-            elif resource['name'] == "mem":
-                offer_mem += resource['scalar']['value']
+        for resource in offer["resources"]:
+            if resource["name"] == "cpus":
+                offer_cpus += resource["scalar"]["value"]
+            elif resource["name"] == "mem":
+                offer_mem += resource["scalar"]["value"]
 
         self.log.debug(
-            "Received offer %s with cpus: %s and mem: %s", offer['id']['value'], offer_cpus, offer_mem
+            "Received offer %s with cpus: %s and mem: %s",
+            offer["id"]["value"],
+            offer_cpus,
+            offer_mem,
         )
 
         remaining_cpus = offer_cpus
         remaining_mem = offer_mem
+
+        if remaining_cpus < self.task_cpu:
+            self.log.info("Offered CPU's are not enough: %d, %d", remaining_cpus, self.task_cpu)
+        if remaining_mem < self.task_mem:
+            self.log.info("Offered MEM's are not enough: %d, %d", remaining_mem, self.task_mem)
+        
         while (
             (not self.task_queue.empty())
             and remaining_cpus >= self.task_cpu
@@ -135,42 +156,42 @@ class AirflowMesosScheduler(MesosClient):
             tid = self.task_counter
             self.task_counter += 1
 
-            if executor_config != None:
+            if executor_config is not None:
                 self.log.debug(executor_config)
                 if "image" in executor_config:
-                    image = executor_config['image']
+                    image = executor_config["image"]
                 else:
                     image = self.mesos_slave_docker_image
 
-                if "command_parameter" in executor_config:
-                    command_parameter = executor_config['command_parameter']
+                #                if "command_parameter" in executor_config:
+                #                    command_parameter = executor_config["command_parameter"]
 
                 if "force_pull" in executor_config:
-                    force_pull = str(executor_config['force_pull']).lower()
+                    force_pull = str(executor_config["force_pull"]).lower()
 
-                if "environment" in executor_config:
-                    environment = executor_config['environment']
+                #                if "environment" in executor_config:
+                #                    environment = executor_config["environment"]
 
-                if "secret_environment" in executor_config:
-                    secret_environment = executor_config['secret_environment']
+                #                if "secret_environment" in executor_config:
+                #                    secret_environment = executor_config["secret_environment"]
 
-                if "cpus" in executor_config:
-                    cpus = executor_config['cpus']
+                #                if "cpus" in executor_config:
+                #                    cpus = executor_config["cpus"]
 
-                if "memlimit" in executor_config:
-                    memlimit = executor_config['memlimit']
+                #                if "memlimit" in executor_config:
+                #                    memlimit = executor_config["memlimit"]
 
-                if "gpus" in executor_config:
-                    gpus = executor_config['gpus']
+                #                if "gpus" in executor_config:
+                #                    gpus = executor_config["gpus"]
 
-                if "network_mode" in executor_config:
-                    network_mode = executor_config['network_mode']
+                #                if "network_mode" in executor_config:
+                #                    network_mode = executor_config["network_mode"]
 
                 if "container_type" in executor_config:
-                    container_type = executor_config['container_type']
+                    container_type = executor_config["container_type"]
 
                 if "airflow_task_id" in executor_config:
-                    airflow_task_id = executor_config['airflow_task_id']
+                    airflow_task_id = executor_config["airflow_task_id"]
 
                 if airflow_task_id is not None:
                     # init tasks list for status_update
@@ -180,59 +201,80 @@ class AirflowMesosScheduler(MesosClient):
 
             self.task_key_map[airflow_task_id] = key
 
-            self.log.info("Launching task %d using offer %s", tid, offer['id']['value'])
+            self.log.info("Launching task %d using offer %s", tid, offer["id"]["value"])
 
             task = {
-                'name': "AirflowTask %d" % tid,
-                'task_id': {'value': airflow_task_id},
-                'agent_id': {'value': offer['agent_id']['value']},
-                'resources': [
-                    {'name': 'cpus', 'type': 'SCALAR', 'scalar': {'value': self.task_cpu}},
-                    {'name': 'mem', 'type': 'SCALAR', 'scalar': {'value': self.task_mem}},
+                "name": "AirflowTask %d" % tid,
+                "task_id": {"value": airflow_task_id},
+                "agent_id": {"value": offer["agent_id"]["value"]},
+                "resources": [
+                    {
+                        "name": "cpus",
+                        "type": "SCALAR",
+                        "scalar": {"value": self.task_cpu},
+                    },
+                    {
+                        "name": "mem",
+                        "type": "SCALAR",
+                        "scalar": {"value": self.task_mem},
+                    },
                 ],
-                'command': {
-                    'shell': self.command_shell,
-                    'environment': {
-                        'variables': [
-                            {'name': 'AIRFLOW__CORE__SQL_ALCHEMY_CONN', 'value': self.core_sql_alchemy_conn},
-                            {'name': 'AIRFLOW__CORE__FERNET_KEY', 'value': self.core_fernet_key},
-                            {'name': 'AIRFLOW__LOGGING__LOGGING_LEVEL', 'value': self.logging_logging_level},
+                "command": {
+                    "shell": self.command_shell,
+                    "environment": {
+                        "variables": [
+                            {
+                                "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
+                                "value": self.core_sql_alchemy_conn,
+                            },
+                            {
+                                "name": "AIRFLOW__CORE__FERNET_KEY",
+                                "value": self.core_fernet_key,
+                            },
+                            {
+                                "name": "AIRFLOW__LOGGING__LOGGING_LEVEL",
+                                "value": self.logging_logging_level,
+                            },
                         ]
                     },
-                    'value': " ".join(cmd),
+                    "value": " ".join(cmd),
                 },
-                'container': {
-                    'type': container_type,
-                    'volumes': [
+                "container": {
+                    "type": container_type,
+                    "volumes": [
                         {
-                            'container_path': self.mesos_docker_volume_dag_container_path,
-                            'mode': 'RW',
-                            'source': {
-                                'type': 'DOCKER_VOLUME',
-                                'docker_volume': {
-                                    'driver': self.mesos_docker_volume_driver,
-                                    'name': self.mesos_docker_volume_dag_name,
+                            "container_path": self.mesos_docker_volume_dag_container_path,
+                            "mode": "RW",
+                            "source": {
+                                "type": "DOCKER_VOLUME",
+                                "docker_volume": {
+                                    "driver": self.mesos_docker_volume_driver,
+                                    "name": self.mesos_docker_volume_dag_name,
                                 },
                             },
                         },
                         {
-                            'container_path': self.mesos_docker_volume_logs_container_path,
-                            'mode': 'RW',
-                            'source': {
-                                'type': 'DOCKER_VOLUME',
-                                'docker_volume': {
-                                    'driver': self.mesos_docker_volume_driver,
-                                    'name': self.mesos_docker_volume_logs_name,
+                            "container_path": self.mesos_docker_volume_logs_container_path,
+                            "mode": "RW",
+                            "source": {
+                                "type": "DOCKER_VOLUME",
+                                "docker_volume": {
+                                    "driver": self.mesos_docker_volume_driver,
+                                    "name": self.mesos_docker_volume_logs_name,
                                 },
                             },
                         },
                     ],
-                    'docker': {
-                        'image': image,
-                        'force_pull_image': force_pull,
-                        'privileged': 'true',
-                        'parameters': [
-                            {'key': 'volume', 'value': self.mesos_docker_sock + ':/var/run/docker.sock'}
+                    "docker": {
+                        "image": image,
+                        "force_pull_image": force_pull,
+                        "privileged": "true",
+                        "parameters": [
+                            {
+                                "key": "volume",
+                                "value": self.mesos_docker_sock
+                                + ":/var/run/docker.sock",
+                            }
                         ],
                     },
                 },
@@ -241,18 +283,21 @@ class AirflowMesosScheduler(MesosClient):
             # if the container would be UCR, we can attach tty
             if container_type == "MESOS":
                 task["container"]["tty_info"] = {
-                    'window_size': {
-                        'rows': 80,
-                        'columns': 80,
+                    "window_size": {
+                        "rows": 80,
+                        "columns": 80,
                     },
                 }
 
-            option = {'Filters': {'RefuseSeconds': '0.5'}}
+            option = {"Filters": {"RefuseSeconds": "0.5"}}
 
             tasks.append(task)
             remaining_cpus -= self.task_cpu
             remaining_mem -= self.task_mem
-        mesos_offer.accept(tasks, option)
+        if len(tasks) > 0:
+            mesos_offer.accept(tasks, option)
+        else:
+            mesos_offer.decline()
 
     @provide_session
     def subscribed(self, driver, session=None):
@@ -261,13 +306,18 @@ class AirflowMesosScheduler(MesosClient):
 
         :param driver: Mesos driver object
         """
+        # pylint: disable=import-outside-toplevel
         from airflow.models import Connection
 
         # Update the Framework ID in the database.
         conn_id = FRAMEWORK_CONNID_PREFIX + get_framework_name()
         connection = session.query(Connection).filter_by(conn_id=conn_id).first()
         if connection is None:
-            connection = Connection(conn_id=conn_id, conn_type='mesos_framework-id', extra=driver.frameworkId)
+            connection = Connection(
+                conn_id=conn_id,
+                conn_type="mesos_framework-id",
+                extra=driver.frameworkId,
+            )
         else:
             connection.extra = driver.frameworkId
 
@@ -291,7 +341,7 @@ class AirflowMesosScheduler(MesosClient):
             self.tasks[task_id] = None
             return
 
-        if task_state in ('TASK_LOST', 'TASK_KILLED', 'TASK_FAILED'):
+        if task_state in ("TASK_LOST", "TASK_KILLED", "TASK_FAILED"):
             self.result_queue.put((key, State.FAILED))
             self.tasks[task_id] = None
             return
@@ -302,7 +352,6 @@ class AirflowMesosScheduler(MesosClient):
             return self.tasks[task_id]
 
         return None
-
 
 
 class MesosExecutor(BaseExecutor):
@@ -339,42 +388,46 @@ class MesosExecutor(BaseExecutor):
         self.driver = None
         self.client = None
         self.mesos_framework = None
+        self.master_urls = None
 
     @provide_session
     def start(self, session=None):
         """Setup and start routine to connect with the mesos master"""
-        master = conf.get('mesos', 'MASTER')
+        master = conf.get("mesos", "MASTER")
 
         framework_name = get_framework_name()
         framework_id = None
-        framework_role = conf.get('mesos', 'FRAMEWORK_ROLE', fallback="marathon")
+        framework_role = conf.get("mesos", "FRAMEWORK_ROLE", fallback="marathon")
 
-        task_cpu = conf.getfloat('mesos', 'TASK_CPU', fallback=0.1)
-        task_memory = conf.getint('mesos', 'TASK_MEMORY', fallback=256)
+        task_cpu = conf.getfloat("mesos", "TASK_CPU", fallback=0.1)
+        task_memory = conf.getint("mesos", "TASK_MEMORY", fallback=256)
 
-        if conf.getboolean('mesos', 'CHECKPOINT'):
+        if conf.getboolean("mesos", "CHECKPOINT"):
             framework_checkpoint = True
 
-            if conf.get('mesos', 'FAILOVER_TIMEOUT'):
+            if conf.get("mesos", "FAILOVER_TIMEOUT"):
                 # Import here to work around a circular import error
+                # pylint: disable=import-outside-toplevel
                 from airflow.models import Connection
 
                 # Query the database to get the ID of the Mesos Framework, if available.
                 conn_id = FRAMEWORK_CONNID_PREFIX + framework_name
-                connection = session.query(Connection).filter_by(conn_id=conn_id).first()
+                connection = (
+                    session.query(Connection).filter_by(conn_id=conn_id).first()
+                )
                 if connection is not None:
                     # Set the Framework ID to let the scheduler reconnect
                     # with running tasks.
                     framework_id = connection.extra
 
                 # Set Timeout in the case of a mesos master leader change
-                framework_failover_timeout = conf.getint('mesos', 'FAILOVER_TIMEOUT')
+                framework_failover_timeout = conf.getint("mesos", "FAILOVER_TIMEOUT")
 
         else:
             framework_checkpoint = False
 
         self.log.info(
-            'MesosFramework master : %s, name : %s, cpu : %d, mem : %d, checkpoint : %s, id : %s',
+            "MesosFramework master : %s, name : %s, cpu : %d, mem : %d, checkpoint : %s, id : %s",
             master,
             framework_name,
             task_cpu,
@@ -386,7 +439,7 @@ class MesosExecutor(BaseExecutor):
         self.master_urls = "https://" + master
 
         self.client = MesosClient(
-            mesos_urls=self.master_urls.split(','),
+            mesos_urls=self.master_urls.split(","),
             frameworkName=framework_name,
             frameworkId=None,
         )
@@ -398,17 +451,23 @@ class MesosExecutor(BaseExecutor):
         if framework_checkpoint:
             self.client.set_checkpoint(framework_checkpoint)
 
-        if conf.getboolean('mesos', 'AUTHENTICATE'):
-            if not conf.get('mesos', 'DEFAULT_PRINCIPAL'):
+        if conf.getboolean("mesos", "AUTHENTICATE"):
+            if not conf.get("mesos", "DEFAULT_PRINCIPAL"):
                 self.log.error("Expecting authentication principal in the environment")
-                raise AirflowException("mesos.default_principal not provided in authenticated mode")
-            if not conf.get('mesos', 'DEFAULT_SECRET'):
+                raise AirflowException(
+                    "mesos.default_principal not provided in authenticated mode"
+                )
+            if not conf.get("mesos", "DEFAULT_SECRET"):
                 self.log.error("Expecting authentication secret in the environment")
-                raise AirflowException("mesos.default_secret not provided in authenticated mode")
-            self.client.principal = conf.get('mesos', 'DEFAULT_PRINCIPAL')
-            self.client.secret = conf.get('mesos', 'DEFAULT_SECRET')
+                raise AirflowException(
+                    "mesos.default_secret not provided in authenticated mode"
+                )
+            self.client.principal = conf.get("mesos", "DEFAULT_PRINCIPAL")
+            self.client.secret = conf.get("mesos", "DEFAULT_SECRET")
 
-        driver = AirflowMesosScheduler(self, self.task_queue, self.result_queue, task_cpu, task_memory)
+        driver = AirflowMesosScheduler(
+            self, self.task_queue, self.result_queue, task_cpu, task_memory
+        )
         self.driver = driver
         self.client.on(MesosClient.SUBSCRIBED, driver.subscribed)
         self.client.on(MesosClient.UPDATE, driver.status_update)
@@ -418,18 +477,32 @@ class MesosExecutor(BaseExecutor):
         self.mesos_framework.start()
 
         # start the framework api
-        app.add_url_rule("/v0/queue_command", "queue_command", self.api_queue_command, methods=["POST"])
-        app.add_url_rule("/v0/task/<task_id>", "task/<task_id>", self.api_get_task_info, methods=["GET"])
-        app.add_url_rule("/v0/agent/<agent_id>", "agent/<agent_id>", self.api_get_agent_address, methods=["GET"])
+        app.add_url_rule(
+            "/v0/queue_command",
+            "queue_command",
+            self.api_queue_command,
+            methods=["POST"],
+        )
+        app.add_url_rule(
+            "/v0/task/<task_id>",
+            "task/<task_id>",
+            self.api_get_task_info,
+            methods=["GET"],
+        )
+        app.add_url_rule(
+            "/v0/agent/<agent_id>",
+            "agent/<agent_id>",
+            self.api_get_agent_address,
+            methods=["GET"],
+        )
 
-        flaskThread = Thread(target=serve, args=[app], daemon=True, kwargs={'port':'10000'}).start()        
-
+        Thread(target=serve, args=[app], daemon=True, kwargs={"port": "10000"}).start()
 
     def sync(self) -> None:
         """Updates states of the tasks."""
         self.log.debug("Update state of tasks")
         if self.running:
-            self.log.debug('self.running: %s', self.running)
+            self.log.debug("self.running: %s", self.running)
 
         while not self.result_queue.empty():
             results = self.result_queue.get()
@@ -452,13 +525,18 @@ class MesosExecutor(BaseExecutor):
         executor_config: Optional[Any] = None,
     ):
         """Execute Tasks"""
-        self.log.info('Add task %s with command %s with TaskInstance %s', key, command, executor_config)
+        self.log.info(
+            "Add task %s with command %s with TaskInstance %s",
+            key,
+            command,
+            executor_config,
+        )
         self.validate_command(command)
         self.task_queue.put((key, command, executor_config))
 
     def end(self) -> None:
         """Called when the executor shuts down"""
-        self.log.info('Shutting down Mesos Executor')
+        self.log.info("Shutting down Mesos Executor")
         # Both queues should be empty...
         self.task_queue = Queue()
         self.result_queue = Queue()
@@ -482,32 +560,28 @@ class MesosExecutor(BaseExecutor):
         """
         Queue Command via API
 
-        Example: curl --header "Content-Type: application/json" -X POST -d '{ "command": "test", "image": "alpine" }' 127.0.0.1:10000/v0/queue_command
+        Example: curl --header "Content-Type: application/json" -X POST -d
+        '{ "command": "test", "image": "alpine" }' 127.0.0.1:10000/v0/queue_command
         """
 
         data = json.loads(request.data)
-        error, image, command = None, None, None
-
-        self.log.info("HHHHH")
-
-        if "image" in data:
-            image = data['image']
-        else:
-            error = self.api_queue_command_error("Expecting image in queue_command call")
+        error, command = None, None
 
         if "command" in data:
-            command = data['command']
+            command = data["command"]
         else:
-            error = self.api_queue_command_error("Expecting command in queue_command call")
+            error = self.api_queue_command_error(
+                "Expecting command in queue_command call"
+            )
 
-        if error != None:
+        if error is not None:
             response = Response(error, status=400, headers={})
         else:
-            self.log.info('Queue task with command %s and %s', command, data )
+            self.log.info("Queue task with command %s and %s", command, data)
             self.task_queue.put((None, command, data))
             response = Response("Ok", status=200, headers={})
         # Send it
-        return response        
+        return response
 
     def api_get_task_info(self, task_id):
         """
@@ -517,7 +591,9 @@ class MesosExecutor(BaseExecutor):
         """
         task_info = self.driver.get_task_info(task_id)
 
-        response = Response(json.dumps(task_info), status=200, mimetype='application/json')
+        response = Response(
+            json.dumps(task_info), status=200, mimetype="application/json"
+        )
         return response
 
     def api_get_agent_address(self, agent_id):
@@ -526,32 +602,35 @@ class MesosExecutor(BaseExecutor):
         by checking the /slaves endpoint of the master.
         """
 
-        http = urllib3.PoolManager()                                     
-        http_response = http.request('GET', self.master_urls + "/master/slaves", headers=self.authentication_header(), timeout=5)
-        data = http_response.data.decode('utf-8')
+        http = urllib3.PoolManager()
+        http_response = http.request(
+            "GET",
+            self.master_urls + "/master/slaves",
+            headers=self.authentication_header(),
+            timeout=5,
+        )
+        data = http_response.data.decode("utf-8")
 
         if data is not None:
             data = json.loads(data)
-            size = len(data["slaves"])
             for agent in data["slaves"]:
                 if agent["id"] == agent_id:
-                    data = { 'hostname': agent["hostname"], 'port': str(agent["port"]) }
-                    response = Response(json.dumps(data), status=200, mimetype='application/json')
+                    data = {"hostname": agent["hostname"], "port": str(agent["port"])}
+                    response = Response(
+                        json.dumps(data), status=200, mimetype="application/json"
+                    )
                     return response
 
-        response = Response(None, status=200, mimetype='application/json')
+        response = Response(None, status=200, mimetype="application/json")
         return response
-
 
     def authentication_header(self):
         """
         Return the BasicAuth authentication header
         """
-        if (self.client.principal is not None
-            and self.client.secret is not None):
+        if self.client.principal is not None and self.client.secret is not None:
             headers = urllib3.make_headers(
                 basic_auth=self.client.principal + ":" + self.client.secret
             )
             return headers
         return None
-

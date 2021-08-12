@@ -15,4 +15,3 @@ There are two parts of the "Airflow Mesos Provider".
 - Mesos with SSL and Authentication is optional
 - Airflow 2.x
 - Python 3.x
-

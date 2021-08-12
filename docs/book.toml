@@ -8,4 +8,3 @@ title = "Airflow Mesos Provider"
 [build]
 create-missing = true
 preprocess = ["links", "index"]
-

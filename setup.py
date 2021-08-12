@@ -9,25 +9,24 @@ import json
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
-    with open(os.path.join(here, 'README.md')) as f:
+    with open(os.path.join(here, "README.md")) as f:
         README = f.read()
 except UnicodeDecodeError:
-    with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+    with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
         README = f.read()
 
 setup(
-    name='avmesos_airflow_provider',
-    version=os.environ['VERSION'],
-    description='Apache Mesos Provider',
+    name="avmesos_airflow_provider",
+    version=os.environ["VERSION"],
+    description="Apache Mesos Provider",
     long_description=README,
-    long_description_content_type='text/markdown',
-    license='Apache License 2.0',
+    long_description_content_type="text/markdown",
+    license="Apache License 2.0",
     packages=find_packages(),
-    install_requires=['apache-airflow>=2.0'],
-    setup_requires=['avmesos'],
-    author='Andreas Peters',
-    author_email='support@aventer.biz',
-    url='https://www.aventer.biz/',
-    python_requires='~=3.8',
+    install_requires=["apache-airflow>=2.0"],
+    setup_requires=["avmesos"],
+    author="Andreas Peters",
+    author_email="support@aventer.biz",
+    url="https://www.aventer.biz/",
+    python_requires="~=3.8",
 )
-

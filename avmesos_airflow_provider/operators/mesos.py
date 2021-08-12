@@ -103,19 +103,23 @@ class MesosOperator(BaseOperator):
         self.airflow_scheduler_url = airflow_scheduler_url
         self.container_type = container_type
 
-        if conf.getboolean('mesos', 'AUTHENTICATE'):
-            if not conf.get('mesos', 'DEFAULT_PRINCIPAL'):
+        if conf.getboolean("mesos", "AUTHENTICATE"):
+            if not conf.get("mesos", "DEFAULT_PRINCIPAL"):
                 self.log.error("Expecting authentication principal in the environment")
-                raise AirflowException("mesos.default_principal not provided in authenticated mode")
-            if not conf.get('mesos', 'DEFAULT_SECRET'):
+                raise AirflowException(
+                    "mesos.default_principal not provided in authenticated mode"
+                )
+            if not conf.get("mesos", "DEFAULT_SECRET"):
                 self.log.error("Expecting authentication secret in the environment")
-                raise AirflowException("mesos.default_secret not provided in authenticated mode")
-            self.principal = conf.get('mesos', 'DEFAULT_PRINCIPAL')
-            self.secret = conf.get('mesos', 'DEFAULT_SECRET')             
+                raise AirflowException(
+                    "mesos.default_secret not provided in authenticated mode"
+                )
+            self.principal = conf.get("mesos", "DEFAULT_PRINCIPAL")
+            self.secret = conf.get("mesos", "DEFAULT_SECRET")
 
     def execute(self, context) -> Optional[str]:
-        print('Add MesosTask %s with command %s', self.task_id, self.command)
-        self.log.info('Add MesosTask %s with command %s', self.task_id, self.command)
+        print("Add MesosTask %s with command %s", self.task_id, self.command)
+        self.log.info("Add MesosTask %s with command %s", self.task_id, self.command)
         headers = {
             "Content-Type": "application/json",
             "cache-control": "no-cache",
@@ -123,7 +127,7 @@ class MesosOperator(BaseOperator):
 
         data = {}
         data["container_type"] = self.container_type
-        data["airflow_task_id"] = "airflow." + self.dag_id + "." + self.task_id 
+        data["airflow_task_id"] = "airflow." + self.dag_id + "." + self.task_id
 
         if self.command != None:
             data["command"] = self.command
@@ -133,12 +137,11 @@ class MesosOperator(BaseOperator):
 
         data["container_type"] = "MESOS"
 
-
         response = requests.request(
-            method="POST", 
+            method="POST",
             url=self.airflow_scheduler_url + "/v0/queue_command",
-            data=json.dumps(data), 
-            headers=headers
+            data=json.dumps(data),
+            headers=headers,
         )
 
         if response.status_code == 200:
@@ -146,16 +149,20 @@ class MesosOperator(BaseOperator):
             i = 0
             while task == None and i <= 10:
                 task_info = requests.request(
-                    method="GET", 
-                    url=self.airflow_scheduler_url + "/v0/task/" + data["airflow_task_id"],
+                    method="GET",
+                    url=self.airflow_scheduler_url
+                    + "/v0/task/"
+                    + data["airflow_task_id"],
                     data=json.dumps(data),
-                    headers=headers
+                    headers=headers,
                 )
                 task = task_info.json()
                 time.sleep(5)
                 i += 1
 
-            self.container_id = task["status"]["container_status"]["container_id"]["value"]
+            self.container_id = task["status"]["container_status"]["container_id"][
+                "value"
+            ]
             self.agent_id = task["status"]["agent_id"]["value"]
             self._attach_container_output()
 
@@ -164,7 +171,7 @@ class MesosOperator(BaseOperator):
         Get Agent address of the given agent_id
         """
         agent_info = requests.request(
-            method="GET", 
+            method="GET",
             url=self.airflow_scheduler_url + "/v0/agent/" + self.agent_id,
             headers=self._authentication_header(),
         )
@@ -175,32 +182,36 @@ class MesosOperator(BaseOperator):
         Streams all output data (e.g. STDOUT/STDERR) to the
         client from the agent.
         """
-        message = {            
-            'type': 'ATTACH_CONTAINER_OUTPUT',
-            'attach_container_output': {
-                'container_id': {'value': self.container_id }
-            }
+        message = {
+            "type": "ATTACH_CONTAINER_OUTPUT",
+            "attach_container_output": {"container_id": {"value": self.container_id}},
         }
- 
+
         auth = self._authentication_header()
 
         headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/recordio',
-            'Message-Accept': 'application/json',
-            'Authorization': auth["authorization"]
+            "Content-Type": "application/json",
+            "Accept": "application/recordio",
+            "Message-Accept": "application/json",
+            "Authorization": auth["authorization"],
         }
 
         agent_info = self._get_agent_address()
 
         http = urllib3.PoolManager()
-        print("https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1")
+        print(
+            "https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1"
+        )
         task_info = http.request(
-            method="POST", 
-            url="https://" + agent_info["hostname"] + ":" + agent_info["port"] + "/api/v1/",
+            method="POST",
+            url="https://"
+            + agent_info["hostname"]
+            + ":"
+            + agent_info["port"]
+            + "/api/v1/",
             body=json.dumps(message),
             preload_content=False,
-            headers=headers
+            headers=headers,
         )
 
         self._process_output_stream(task_info)
@@ -216,7 +227,7 @@ class MesosOperator(BaseOperator):
         """
         try:
             for chunk in response.stream():
-                clean = re.sub(r'.*\n', "", chunk.decode('utf-8'))
+                clean = re.sub(r".*\n", "", chunk.decode("utf-8"))
                 data = json.loads(clean)
                 if "type" in data:
                     if data["type"] == "DATA":
@@ -226,23 +237,17 @@ class MesosOperator(BaseOperator):
 
         except Exception as e:
             raise AirflowException(
-                "Error parsing output stream: {error}".format(error=e))
-
-    
+                "Error parsing output stream: {error}".format(error=e)
+            )
 
     def _authentication_header(self):
         """
         Return the BasicAuth authentication header
         """
-        if (self.principal is not None
-                and self.secret is not None):
-            return urllib3.make_headers(
-                basic_auth=self.principal + ":" + self.secret
-            )
+        if self.principal is not None and self.secret is not None:
+            return urllib3.make_headers(basic_auth=self.principal + ":" + self.secret)
 
         return None
 
     def on_kill(self) -> None:
         self.log.info("TODO: mesos operator on_kill")
-    
-
