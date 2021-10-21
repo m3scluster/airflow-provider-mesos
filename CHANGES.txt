@@ -1,8 +1,9 @@
 ## Changelog
 
-## dev
+## master
 
 - Add: Documentation
+- Change it to support python >= 3.6
 
 ## v0.1.1
 

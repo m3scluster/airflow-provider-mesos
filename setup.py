@@ -28,5 +28,5 @@ setup(
     author="Andreas Peters",
     author_email="support@aventer.biz",
     url="https://www.aventer.biz/",
-    python_requires="~=3.8",
+    python_requires=">=3.6",
 )
