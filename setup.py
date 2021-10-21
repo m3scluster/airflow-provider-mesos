@@ -17,7 +17,7 @@ except UnicodeDecodeError:
 
 setup(
     name="avmesos_airflow_provider",
-    version="0.1.0",
+    version="0.1.1",
     description="Apache Mesos Provider",
     long_description=README,
     long_description_content_type="text/markdown",
