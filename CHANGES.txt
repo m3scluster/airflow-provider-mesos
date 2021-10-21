@@ -4,6 +4,7 @@
 
 - Add: Documentation
 - Change it to support python >= 3.6
+- Update requirement in the setup.py
 
 ## v0.1.1
 
