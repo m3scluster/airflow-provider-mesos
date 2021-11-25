@@ -525,10 +525,8 @@ class MesosExecutor(BaseExecutor):
                 return
             if state == "success":
                 self.log.info("tasks successfull %s", key)
-                self.task_queue.task_done()
             if state == "failed":
                 self.log.info("tasks failed %s", key)
-                self.task_queue.task_done()
             self.change_state(*results)
 
     def execute_async(
