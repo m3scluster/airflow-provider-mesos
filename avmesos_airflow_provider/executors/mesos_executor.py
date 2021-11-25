@@ -104,6 +104,12 @@ class AirflowMesosScheduler(MesosClient):
             conf.get("mesos", "COMMAND_SHELL", fallback=True)
         ).lower()
 
+    def resource_heartbeat(self, heartbeat):
+        """If we got a heartbeat, run checks"""
+        self.log.info("Heartbeat")
+        if self.task_queue.empty():
+            self.driver.suppress()
+       
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
         for i, offer in enumerate(offers):
@@ -127,9 +133,11 @@ class AirflowMesosScheduler(MesosClient):
 
         for resource in offer["resources"]:
             if resource["name"] == "cpus":
-                offer_cpus += resource["scalar"]["value"]
+                offer_cpus = resource["scalar"]["value"]
+                self.log.info("CPU's %d", offer_cpus)
             elif resource["name"] == "mem":
-                offer_mem += resource["scalar"]["value"]
+                offer_mem = resource["scalar"]["value"]
+                self.log.info("MEM %d", offer_mem)
 
         self.log.debug(
             "Received offer %s with cpus: %s and mem: %s",
@@ -142,9 +150,9 @@ class AirflowMesosScheduler(MesosClient):
         remaining_mem = offer_mem
 
         if remaining_cpus < self.task_cpu:
-            self.log.info("Offered CPU's are not enough: %d, %d", remaining_cpus, self.task_cpu)
+            self.log.info("Offered CPU's are not enough: %d, %d", remaining_cpus, self.task_cpu, offer["id"]["value"])
         if remaining_mem < self.task_mem:
-            self.log.info("Offered MEM's are not enough: %d, %d", remaining_mem, self.task_mem)
+            self.log.info("Offered MEM's are not enough: %d, %d", remaining_mem, self.task_mem, offer["id"]["value"])
         
         while (
             (not self.task_queue.empty())
@@ -472,6 +480,8 @@ class MesosExecutor(BaseExecutor):
         self.client.on(MesosClient.SUBSCRIBED, driver.subscribed)
         self.client.on(MesosClient.UPDATE, driver.status_update)
         self.client.on(MesosClient.OFFERS, driver.resource_offers)
+        self.client.on(MesosClient.HEARTBEAT, driver.resource_heartbeat)
+        
 
         self.mesos_framework = MesosExecutor.MesosFramework(self.client)
         self.mesos_framework.start()

@@ -5,6 +5,7 @@
 - Add: Documentation
 - Change it to support python >= 3.6
 - Update requirement in the setup.py
+- Add: Suppress mesos framework offers it there are no tasks in the queue
 
 ## v0.1.1
 
