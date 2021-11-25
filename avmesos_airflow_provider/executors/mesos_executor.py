@@ -108,7 +108,11 @@ class AirflowMesosScheduler(MesosClient):
         """If we got a heartbeat, run checks"""
         self.log.info("Heartbeat")
         if self.task_queue.empty():
+            self.log.debug("Suppress Mesos Framework")
             self.driver.suppress()
+        else:
+            self.log.debug("Revive Mesos Framework")
+            self.driver.revive()
        
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
