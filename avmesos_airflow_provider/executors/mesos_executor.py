@@ -116,12 +116,12 @@ class AirflowMesosScheduler(MesosClient):
        
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
-        for i, offer in enumerate(offers):
-            if i == 0:
-                self.run_job(offer)
-            else:
-              offer.decline()
-            i += 1
+        while (not self.task_queue.empty()):
+            for i, offer in enumerate(offers):
+                if not self.run_job(offer):
+                     offertmp = offer.get_offer()
+                     self.log.info("Declined Offer: %s", offertmp["id"]["value"])
+                     offer.decline()        
 
     # pylint: disable=too-many-branches
     def run_job(self, mesos_offer):
@@ -155,15 +155,12 @@ class AirflowMesosScheduler(MesosClient):
 
         if remaining_cpus < self.task_cpu:
             self.log.info("Offered CPU's are not enough: %d, %d", remaining_cpus, self.task_cpu, offer["id"]["value"])
+            return False
         if remaining_mem < self.task_mem:
             self.log.info("Offered MEM's are not enough: %d, %d", remaining_mem, self.task_mem, offer["id"]["value"])
+            return False
         
-        while (
-            (not self.task_queue.empty())
-            and remaining_cpus >= self.task_cpu
-            and remaining_mem >= self.task_mem
-        ):
-
+        if (not self.task_queue.empty()):
             key, cmd, executor_config = self.task_queue.get()
             tid = self.task_counter
             self.task_counter += 1
@@ -306,10 +303,12 @@ class AirflowMesosScheduler(MesosClient):
             tasks.append(task)
             remaining_cpus -= self.task_cpu
             remaining_mem -= self.task_mem
-        if len(tasks) > 0:
+        if len(tasks) > 0:            
             mesos_offer.accept(tasks, option)
+            return True
         else:
             mesos_offer.decline()
+            return False
 
     @provide_session
     def subscribed(self, driver, session=None):
