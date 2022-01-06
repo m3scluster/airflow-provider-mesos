@@ -43,6 +43,7 @@ docker_volume_dag_container_path = /home/airflow/airflow/dags/
 docker_sock = /var/run/docker.sock
 docker_volume_logs_name = airflowlogs
 docker_volume_logs_container_path = /home/airflow/airflow/logs/
+docker_environment = '[{ "name":"<KEY>", "value":"<VALUE>" }, { ... }]'
 ```
 
 ## DAG example with mesos executor

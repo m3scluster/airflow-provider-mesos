@@ -1,5 +1,9 @@
 ## Changelog
 
+## master
+
+- Add: support of custom docker environment (more details in the readme.md)
+
 ## v0.1.2
 
 - Add: Documentation

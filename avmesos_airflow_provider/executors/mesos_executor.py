@@ -26,6 +26,7 @@ from threading import Thread
 import threading
 import json
 import urllib3
+import ast
 
 
 from avmesos.client import MesosClient
@@ -87,6 +88,7 @@ class AirflowMesosScheduler(MesosClient):
         self.mesos_slave_docker_image = conf.get("mesos", "DOCKER_IMAGE_SLAVE")
         self.mesos_docker_volume_driver = conf.get("mesos", "DOCKER_VOLUME_DRIVER")
         self.mesos_docker_volume_dag_name = conf.get("mesos", "DOCKER_VOLUME_DAG_NAME")
+        self.mesos_docker_environment = conf.get("mesos", "DOCKER_ENVIRONMENT")
         self.mesos_docker_volume_dag_container_path = conf.get(
             "mesos", "DOCKER_VOLUME_DAG_CONTAINER_PATH"
         )
@@ -288,6 +290,14 @@ class AirflowMesosScheduler(MesosClient):
                     },
                 },
             }
+
+            # concat custom docker environment variables if they are configured
+            i = 0
+            dockerEnv = ast.literal_eval(self.mesos_docker_environment)
+            lenTask = len(dockerEnv)
+            while i < lenTask:
+                task["command"]["environment"]["variables"].append(dockerEnv[i])
+                i += 1
 
             # if the container would be UCR, we can attach tty
             if container_type == "MESOS":
