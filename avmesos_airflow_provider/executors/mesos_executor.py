@@ -88,7 +88,7 @@ class AirflowMesosScheduler(MesosClient):
         self.mesos_slave_docker_image = conf.get("mesos", "DOCKER_IMAGE_SLAVE")
         self.mesos_docker_volume_driver = conf.get("mesos", "DOCKER_VOLUME_DRIVER")
         self.mesos_docker_volume_dag_name = conf.get("mesos", "DOCKER_VOLUME_DAG_NAME")
-        self.mesos_docker_environment = conf.get("mesos", "DOCKER_ENVIRONMENT", fallback="[{}]")
+        self.mesos_docker_environment = conf.get("mesos", "DOCKER_ENVIRONMENT", fallback="")
         self.mesos_docker_volume_dag_container_path = conf.get(
             "mesos", "DOCKER_VOLUME_DAG_CONTAINER_PATH"
         )
@@ -214,8 +214,10 @@ class AirflowMesosScheduler(MesosClient):
 
             self.log.info("Launching task %d using offer %s", tid, offer["id"]["value"])
 
+            name = key.dag_id + "_" + key.task_id + "_" + str(key.execution_date.date()) + ":" + str(key.execution_date.time())
+
             task = {
-                "name": "AirflowTask %d" % tid,
+                "name": name,
                 "task_id": {"value": airflow_task_id},
                 "agent_id": {"value": offer["agent_id"]["value"]},
                 "resources": [
@@ -292,12 +294,13 @@ class AirflowMesosScheduler(MesosClient):
             }
 
             # concat custom docker environment variables if they are configured
-            i = 0
-            dockerEnv = ast.literal_eval(self.mesos_docker_environment)
-            lenTask = len(dockerEnv)
-            while i < lenTask:
-                task["command"]["environment"]["variables"].append(dockerEnv[i])
-                i += 1
+            if len(self.mesos_docker_environment) > 0:
+                dockerEnv = ast.literal_eval(self.mesos_docker_environment)
+                lenTask = len(dockerEnv)
+                i = 0
+                while i < lenTask:
+                    task["command"]["environment"]["variables"].append(dockerEnv[i])
+                    i += 1
 
             # if the container would be UCR, we can attach tty
             if container_type == "MESOS":

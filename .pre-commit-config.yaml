@@ -5,14 +5,12 @@ repos:
   - id: check-merge-conflict
   - id: end-of-file-fixer
   - id: trailing-whitespace
-  - id: detect-aws-credentials
-  - id: detect-private-key    
 
 - repo: https://github.com/ambv/black
   rev: 21.7b0
   hooks:
   - id: black
-    language_version: python3.8
+    language_version: python3.10
 
 - repo: local
   hooks:
