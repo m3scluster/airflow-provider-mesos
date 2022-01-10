@@ -156,10 +156,10 @@ class AirflowMesosScheduler(MesosClient):
         remaining_mem = offer_mem
 
         if remaining_cpus < self.task_cpu:
-            self.log.info("Offered CPU's are not enough: %d, %d", remaining_cpus, self.task_cpu, offer["id"]["value"])
+            self.log.info("Offered CPU's are not enough: %d, %d, %s", remaining_cpus, self.task_cpu, offer["id"]["value"])
             return False
         if remaining_mem < self.task_mem:
-            self.log.info("Offered MEM's are not enough: %d, %d", remaining_mem, self.task_mem, offer["id"]["value"])
+            self.log.info("Offered MEM's are not enough: %d, %d, %s", remaining_mem, self.task_mem, offer["id"]["value"])
             return False
         
         if (not self.task_queue.empty()):
