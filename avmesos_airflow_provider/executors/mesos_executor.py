@@ -118,7 +118,7 @@ class AirflowMesosScheduler(MesosClient):
        
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
-        while (not self.task_queue.empty()):
+        if (not self.task_queue.empty()):
             for i, offer in enumerate(offers):
                 if not self.run_job(offer):
                      offertmp = offer.get_offer()
