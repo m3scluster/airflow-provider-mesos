@@ -136,6 +136,9 @@ class AirflowMesosScheduler(MesosClient):
         force_pull = "true"
         container_type = "DOCKER"
         airflow_task_id = None
+        cpu = self.task_cpu
+        mem = self.task_mem
+
 
         for resource in offer["resources"]:
             if resource["name"] == "cpus":
@@ -155,30 +158,26 @@ class AirflowMesosScheduler(MesosClient):
         remaining_cpus = offer_cpus
         remaining_mem = offer_mem
 
-        if remaining_cpus < self.task_cpu:
-            self.log.info("Offered CPU's are not enough: %d, %d, %s", remaining_cpus, self.task_cpu, offer["id"]["value"])
-            return False
-        if remaining_mem < self.task_mem:
-            self.log.info("Offered MEM's are not enough: %d, %d, %s", remaining_mem, self.task_mem, offer["id"]["value"])
-            return False
         
         if (not self.task_queue.empty()):
             key, cmd, executor_config = self.task_queue.get()
             tid = self.task_counter
             self.task_counter += 1
 
-            if executor_config is not None:
-                self.log.debug(executor_config)
-                if "image" in executor_config:
-                    image = executor_config["image"]
-                else:
-                    image = self.mesos_slave_docker_image
+            if "MesosExecutor" in executor_config:
+                self.log.debug("Executor Config: %s", executor_config)
+
+                self.task_cpu = executor_config["MesosExecutor"].get("cpus", cpu)
+                self.task_mem = executor_config["MesosExecutor"].get("mem_limit", mem)
+                image = executor_config["MesosExecutor"].get("image", self.mesos_slave_docker_image)
+                force_pull = str(executor_config["MesosExecutor"].get("force_pull", "true")).lower()
+                container_type = executor_config["MesosExecutor"].get("container_type", "DOCKER")
+                airflow_task_id = executor_config["MesosExecutor"].get("airflow_task_id", "airflow." + str(tid))
+
+
 
                 #                if "command_parameter" in executor_config:
                 #                    command_parameter = executor_config["command_parameter"]
-
-                if "force_pull" in executor_config:
-                    force_pull = str(executor_config["force_pull"]).lower()
 
                 #                if "environment" in executor_config:
                 #                    environment = executor_config["environment"]
@@ -186,11 +185,6 @@ class AirflowMesosScheduler(MesosClient):
                 #                if "secret_environment" in executor_config:
                 #                    secret_environment = executor_config["secret_environment"]
 
-                #                if "cpus" in executor_config:
-                #                    cpus = executor_config["cpus"]
-
-                #                if "memlimit" in executor_config:
-                #                    memlimit = executor_config["memlimit"]
 
                 #                if "gpus" in executor_config:
                 #                    gpus = executor_config["gpus"]
@@ -198,17 +192,16 @@ class AirflowMesosScheduler(MesosClient):
                 #                if "network_mode" in executor_config:
                 #                    network_mode = executor_config["network_mode"]
 
-                if "container_type" in executor_config:
-                    container_type = executor_config["container_type"]
-
-                if "airflow_task_id" in executor_config:
-                    airflow_task_id = executor_config["airflow_task_id"]
-
                 if airflow_task_id is not None:
                     # init tasks list for status_update
                     self.tasks[airflow_task_id] = None
-                else:
-                    airflow_task_id = "airflow." + str(tid)
+
+            if remaining_cpus < self.task_cpu:
+                self.log.info("Offered CPU's are not enough: %d, %d, %s", remaining_cpus, self.task_cpu, offer["id"]["value"])
+                return False
+            if remaining_mem < self.task_mem:
+                self.log.info("Offered MEM's are not enough: %d, %d, %s", remaining_mem, self.task_mem, offer["id"]["value"])
+                return False
 
             self.task_key_map[airflow_task_id] = key
 
