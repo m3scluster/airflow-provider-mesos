@@ -61,6 +61,12 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
                 auto_remove=False,
                 command="/bin/sleep 600",
                 docker_url='unix:///var/run/docker.sock'
+                executor_config={
+                        "MesosExecutor": {
+                                "cpus": 2.0,
+                                "mem_limit": 2048
+                        }
+                }         
         )
 
         t2
