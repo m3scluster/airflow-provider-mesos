@@ -180,11 +180,14 @@ class AirflowMesosScheduler(MesosClient):
             else:
                 airflow_task_id = "airflow." + str(tid)                    
 
+            # if the resources does not match, add the task again
             if float(remaining_cpus) < float(self.task_cpu):
-                self.log.info("Offered CPU's are not enough: %d, %d, %s", remaining_cpus, self.task_cpu, offer["id"]["value"])
+                self.log.info("Offered CPU's for %d are not enough: got: %d need: %d - %s", tid, remaining_cpus, self.task_cpu, offer["id"]["value"])
+                self.task_queue.put((key, command, executor_config))
                 return False
             if float(remaining_mem) < float(self.task_mem):
-                self.log.info("Offered MEM's are not enough: %d, %d, %s", remaining_mem, self.task_mem, offer["id"]["value"])
+                self.log.info("Offered MEM's for %d are not enough: got: %d need: %d - %s", tid, remaining_mem, self.task_mem, offer["id"]["value"])
+                self.task_queue.put((key, command, executor_config))
                 return False
 
             self.task_key_map[airflow_task_id] = key
