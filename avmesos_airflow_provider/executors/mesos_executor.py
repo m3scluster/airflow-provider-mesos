@@ -172,7 +172,10 @@ class AirflowMesosScheduler(MesosClient):
                 force_pull = str(executor_config["MesosExecutor"].get("force_pull", "true")).lower()
                 container_type = executor_config["MesosExecutor"].get("container_type", "DOCKER")
                 airflow_task_id = executor_config["MesosExecutor"].get("airflow_task_id", None)
-
+            else:
+                executor_config = {}
+                executor_config["MesosExecutor"] = {}
+                executor_config["MesosExecutor"]["airflow_task_id"] = None
 
             if airflow_task_id is not None:
                 # init tasks list for status_update
