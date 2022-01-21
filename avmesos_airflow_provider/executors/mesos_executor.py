@@ -176,17 +176,20 @@ class AirflowMesosScheduler(MesosClient):
 
             if airflow_task_id is not None:
                 # init tasks list for status_update
-                self.tasks[airflow_task_id] = None                
+                self.tasks[airflow_task_id] = None
             else:
-                airflow_task_id = "airflow." + str(tid)                    
+                airflow_task_id = "airflow." + str(tid)
+
+            # set the airflow_task_id as executor config
+            executor_config["MesosExecutor"]["airflow_task_id"] = airflow_task_id
 
             # if the resources does not match, add the task again
             if float(remaining_cpus) < float(self.task_cpu):
-                self.log.info("Offered CPU's for %d are not enough: got: %d need: %d - %s", tid, remaining_cpus, self.task_cpu, offer["id"]["value"])
+                self.log.info("Offered CPU's for task %d are not enough: got: %d need: %d - %s", tid, remaining_cpus, self.task_cpu, offer["id"]["value"])
                 self.task_queue.put((key, cmd, executor_config))
                 return False
             if float(remaining_mem) < float(self.task_mem):
-                self.log.info("Offered MEM's for %d are not enough: got: %d need: %d - %s", tid, remaining_mem, self.task_mem, offer["id"]["value"])
+                self.log.info("Offered MEM's for task %d are not enough: got: %d need: %d - %s", tid, remaining_mem, self.task_mem, offer["id"]["value"])
                 self.task_queue.put((key, cmd, executor_config))
                 return False
 
@@ -501,6 +504,7 @@ class MesosExecutor(BaseExecutor):
             self.api_get_agent_address,
             methods=["GET"],
         )
+
 
         Thread(target=serve, args=[app], daemon=True, kwargs={"port": "10000"}).start()
 
