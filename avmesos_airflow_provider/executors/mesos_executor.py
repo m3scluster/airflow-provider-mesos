@@ -446,7 +446,9 @@ class MesosExecutor(BaseExecutor):
             framework_id,
         )
 
-        self.master_urls = "https://" + master
+        self.master_urls = "http://" + master
+        if conf.getboolean("mesos", "MESOS_SSL"):
+          self.master_urls = "https://" + master
 
         self.client = MesosClient(
             mesos_urls=self.master_urls.split(","),
