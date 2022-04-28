@@ -1,4 +1,4 @@
-# Apache Mesos Provider for Apache Airflow 2.x
+# Provider for Apache Airflow 2.x to schedule Apache Mesos
 
 This provider for Apache Airflow contain the following features:
 
