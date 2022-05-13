@@ -110,10 +110,10 @@ class AirflowMesosScheduler(MesosClient):
         """If we got a heartbeat, run checks"""
         self.log.info("Heartbeat")
         if self.task_queue.empty():
-            self.log.debug("Suppress Mesos Framework")
+            self.log.info("Suppress Mesos Framework")
             self.driver.suppress()
         else:
-            self.log.debug("Revive Mesos Framework")
+            self.log.info("Revive Mesos Framework")
             self.driver.revive()
        
     def resource_offers(self, offers):
@@ -123,7 +123,13 @@ class AirflowMesosScheduler(MesosClient):
                 if not self.run_job(offer):
                      offertmp = offer.get_offer()
                      self.log.info("Declined Offer: %s", offertmp["id"]["value"])
-                     offer.decline()        
+                     offer.decline()
+        else:
+            for i, offer in enumerate(offers):
+                offertmp = offer.get_offer()
+                self.log.info("Declined Offer: %s", offertmp["id"]["value"])
+                offer.decline()
+
 
     # pylint: disable=too-many-branches
     def run_job(self, mesos_offer):
@@ -200,7 +206,10 @@ class AirflowMesosScheduler(MesosClient):
 
             self.log.info("Launching task %d using offer %s", tid, offer["id"]["value"])
 
-            name = key.dag_id + "_" + key.task_id + "_" + str(key.execution_date.date()) + ":" + str(key.execution_date.time())
+            if hasattr(key, 'execution_date'):
+                name = key.dag_id + "_" + key.task_id + "_" + str(key.execution_date.date()) + ":" + str(key.execution_date.time())
+            else:
+                name = key.dag_id + "_" + key.task_id
 
             task = {
                 "name": name,
@@ -504,6 +513,12 @@ class MesosExecutor(BaseExecutor):
             methods=["GET"],
         )
         app.add_url_rule(
+            "/v0/dags",
+            "dags",
+            self.api_get_dag_queue,
+            methods=["GET"],
+        )
+        app.add_url_rule(
             "/v0/agent/<agent_id>",
             "agent/<agent_id>",
             self.api_get_agent_address,
@@ -511,7 +526,7 @@ class MesosExecutor(BaseExecutor):
         )
 
 
-        Thread(target=serve, args=[app], daemon=True, kwargs={"port": "10000"}).start()
+        Thread(target=serve, args=[app], daemon=True, kwargs={"port": "11000"}).start()
 
     def sync(self) -> None:
         """Updates states of the tasks."""
@@ -606,6 +621,18 @@ class MesosExecutor(BaseExecutor):
 
         response = Response(
             json.dumps(task_info), status=200, mimetype="application/json"
+        )
+        return response
+
+    def api_get_dag_queue(self):
+        """
+        Get Airflow DAG queue
+
+        Example: curl -X GET 127.0.0.1:10000/v0/dags
+        """
+        l = list(self.task_queue.queue)
+        response = Response(
+            str(json.dumps(l)), status=200, mimetype="application/json"
         )
         return response
 

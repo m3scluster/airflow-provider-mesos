@@ -3,6 +3,9 @@
 ## master
 
 - Add: Non SSL support for mesos.
+- Add: Decline all outstanding offers if there are no tasks in queue
+- Fix: "object has no attribute execution_date"
+- API Add: Add api call to get out all queued tasks 
 
 ## v0.1.4
 

@@ -1,8 +1,9 @@
 # Byte-compiled / optimized / DLL files
-python-dev
+python-d
 __pycache__/
 *.py[cod]
 *$py.class
+logfile
 
 venv
 venv3
