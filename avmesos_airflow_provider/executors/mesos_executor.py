@@ -631,10 +631,30 @@ class MesosExecutor(BaseExecutor):
         Example: curl -X GET 127.0.0.1:10000/v0/dags
         """
         l = list(self.task_queue.queue)
+        a = self.list_to_json(l)
         response = Response(
-            str(json.dumps(l)), status=200, mimetype="application/json"
+            str(json.dumps(a)), status=200, mimetype="application/json"
         )
         return response
+
+    def list_to_json(self, liste):
+        ret = []
+        for i in liste: 
+            print(type(i))
+            if isinstance(i, tuple):
+                for x in range(len(i)):
+                    ret.append(self.list_to_json(i[x]))
+
+            if isinstance(i, list):
+                ret.append(self.list_to_json(i))
+
+            if isinstance(i, str):
+                ret.append(i)        
+
+            if isinstance(i, int):
+                ret.append(i)
+        return ret
+
 
     def api_get_agent_address(self, agent_id):
         """

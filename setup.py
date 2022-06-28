@@ -24,7 +24,7 @@ setup(
     license="Apache License 2.0",
     packages=find_packages(),
     install_requires=["apache-airflow>=2.0"],
-    setup_requires=["avmesos", "waitress"],
+    setup_requires=["avmesos>=0.4.0", "waitress"],
     author="Andreas Peters",
     author_email="support@aventer.biz",
     url="https://www.aventer.biz/",
