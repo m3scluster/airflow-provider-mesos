@@ -639,20 +639,25 @@ class MesosExecutor(BaseExecutor):
 
     def list_to_json(self, liste):
         ret = []
+        a = 0
         for i in liste: 
-            print(type(i))
             if isinstance(i, tuple):
+                b = 0
+                sub = []
                 for x in range(len(i)):
-                    ret.append(self.list_to_json(i[x]))
+                  sub.append({b:self.list_to_json(i[x])})
+                  b = b +1
+                ret.append(sub)
 
             if isinstance(i, list):
-                ret.append(self.list_to_json(i))
+              ret.append({a:self.list_to_json(i)})
 
             if isinstance(i, str):
-                ret.append(i)        
+              ret.append({a:i})
 
             if isinstance(i, int):
-                ret.append(i)
+              ret.append({a:i})
+            a = a + 1
         return ret
 
 
