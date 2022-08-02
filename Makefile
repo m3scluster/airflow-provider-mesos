@@ -26,6 +26,9 @@ build:
 	@echo ">>>> Build python module"
 	@python3 setup.py sdist bdist_wheel	
 
+upload:
+	@python3 -m twine upload --repository pypi dist/*
+
 install:	
 	@echo ">>>> Install python module"
 	@pip3 install .
