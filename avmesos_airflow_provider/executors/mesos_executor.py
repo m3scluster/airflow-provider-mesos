@@ -38,6 +38,8 @@ from airflow.models.taskinstance import TaskInstanceKey
 from airflow.utils.session import provide_session
 from airflow.utils.state import State
 from flask import Flask, request, Response
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 from waitress import serve
 
 FRAMEWORK_CONNID_PREFIX = "mesos_framework_"
@@ -45,7 +47,9 @@ FRAMEWORK_CONNID_PREFIX = "mesos_framework_"
 urllib3.disable_warnings()
 
 app = Flask(__name__)
-
+auth = HTTPBasicAuth()
+api_username = ""
+api_password = ""
 
 def get_framework_name():
     """Get the mesos framework name if its set in airflow.cfg"""
@@ -169,19 +173,18 @@ class AirflowMesosScheduler(MesosClient):
             tid = self.task_counter
             self.task_counter += 1
 
-            if "MesosExecutor" in executor_config:
+            if executor_config:
                 self.log.debug("Executor Config: %s", executor_config)
 
-                self.task_cpu = executor_config["MesosExecutor"].get("cpus", cpu)
-                self.task_mem = executor_config["MesosExecutor"].get("mem_limit", mem)
-                image = executor_config["MesosExecutor"].get("image", self.mesos_slave_docker_image)
-                force_pull = str(executor_config["MesosExecutor"].get("force_pull", "true")).lower()
-                container_type = executor_config["MesosExecutor"].get("container_type", "DOCKER")
-                airflow_task_id = executor_config["MesosExecutor"].get("airflow_task_id", None)
+                self.task_cpu = executor_config.get("cpus", cpu)
+                self.task_mem = executor_config.get("mem_limit", mem)
+                image = executor_config.get("image", self.mesos_slave_docker_image)
+                force_pull = str(executor_config.get("force_pull", "true")).lower()
+                container_type = executor_config.get("container_type", "DOCKER")
+                airflow_task_id = executor_config.get("airflow_task_id", None)
             else:
-                executor_config = {}
-                executor_config["MesosExecutor"] = {}
-                executor_config["MesosExecutor"]["airflow_task_id"] = None
+                executor_config = []
+                executor_config["airflow_task_id"] = None
 
             if airflow_task_id is not None:
                 # init tasks list for status_update
@@ -190,7 +193,7 @@ class AirflowMesosScheduler(MesosClient):
                 airflow_task_id = "airflow." + str(tid)
 
             # set the airflow_task_id as executor config
-            executor_config["MesosExecutor"]["airflow_task_id"] = airflow_task_id
+            executor_config["airflow_task_id"] = airflow_task_id
 
             # if the resources does not match, add the task again
             if float(remaining_cpus) < float(self.task_cpu):
@@ -500,6 +503,8 @@ class MesosExecutor(BaseExecutor):
         self.mesos_framework.start()
 
         # start the framework api
+        # set api credentials
+
         app.add_url_rule(
             "/v0/queue_command",
             "queue_command",
@@ -527,6 +532,8 @@ class MesosExecutor(BaseExecutor):
 
 
         Thread(target=serve, args=[app], daemon=True, kwargs={"port": "11000"}).start()
+
+
 
     def sync(self) -> None:
         """Updates states of the tasks."""
@@ -578,6 +585,15 @@ class MesosExecutor(BaseExecutor):
         """Terminate the executor is not doing anything."""
         self.end()
 
+    ########## API ##########
+
+    @auth.verify_password
+    def verify_api_password(username, password):
+        api_username = conf.get("mesos", "API_USERNAME", fallback="user")
+        api_password = generate_password_hash(conf.get("mesos", "API_PASSWORD", fallback="password"))
+        if check_password_hash(api_password, password):
+            return username        
+
     def api_queue_command_error(self, message):
         """Error message handling for queue_command"""
         self.log.error(message)
@@ -624,6 +640,7 @@ class MesosExecutor(BaseExecutor):
         )
         return response
 
+    @auth.login_required
     def api_get_dag_queue(self):
         """
         Get Airflow DAG queue
@@ -639,27 +656,19 @@ class MesosExecutor(BaseExecutor):
 
     def list_to_json(self, liste):
         ret = []
-        a = 0
-        for i in liste: 
-            if isinstance(i, tuple):
-                b = 0
-                sub = []
-                for x in range(len(i)):
-                  sub.append({b:self.list_to_json(i[x])})
-                  b = b +1
-                ret.append(sub)
+        for i in liste:
+            ## (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command1', run_id='manual__2022-07-29T15:32:54.865408+00:00', try_number=1), 
 
-            if isinstance(i, list):
-              ret.append({a:self.list_to_json(i)})
-
-            if isinstance(i, str):
-              ret.append({a:i})
-
-            if isinstance(i, int):
-              ret.append({a:i})
-            a = a + 1
+            ## ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command1', 'manual__2022-07-29T15:32:54.865408+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 7.5, 'mem_limit': 32768}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command2', run_id='manual__2022-07-29T15:32:54.865408+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command2', 'manual__2022-07-29T15:32:54.865408+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 2.0, 'mem_limit': 2048}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command1', run_id='manual__2022-07-29T15:34:38.821409+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command1', 'manual__2022-07-29T15:34:38.821409+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 7.5, 'mem_limit': 32768}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command2', run_id='manual__2022-07-29T15:34:38.821409+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command2', 'manual__2022-07-29T15:34:38.821409+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], 
+            ## {'cpus': 2.0, 'mem_limit': 2048})]
+            tmp = dict()
+            tmp["dag_id"] = i[0][0]
+            tmp["task_id"] = i[0][1]
+            tmp["run_id"] = i[0][2]
+            tmp["try_number"] = i[0][3]
+            tmp["MesosExecutor"] = i[2]
+            ret.append(tmp)
         return ret
-
 
     def api_get_agent_address(self, agent_id):
         """

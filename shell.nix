@@ -36,7 +36,7 @@ shellHook = ''
     airflow db init
     airflow users create --username admin --role Admin -e test@example.com -f admin -l admin --password admin
 
-    airflow webserver&
-    airflow scheduler
+    airflow webserver > /dev/null&
+#airflow scheduler
     '';
 }

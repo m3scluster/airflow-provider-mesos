@@ -21,6 +21,12 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
                 auto_remove=False,
                 command="/bin/sleep 600",
                 docker_url='unix:///var/run/docker.sock',
+                executor_config={
+                   "cpus": 7.5,
+                   "mem_limit": 32768
+                },
+                cpus=8,
+                mem_limit='64g'
         )
 
         t2 = DockerOperator(
@@ -31,10 +37,8 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
                 command="/bin/sleep 600",
                 docker_url='unix:///var/run/docker.sock',
                 executor_config={
-                        "MesosExecutor": {
-                                "cpus": 2.0,
-                                "mem_limit": 2048
-                        }
+                   "cpus": 2.0,
+                   "mem_limit": 2048
                 }         
         )
 
