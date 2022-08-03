@@ -83,3 +83,26 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
 
         t2
 ```
+
+## Development
+
+For development and testing we deliver a nix-shell file to install airflow, our airflow provider and postgresql. 
+To use it, please follow the following steps:
+
+1. Run mesos-mini:
+
+```bash
+docker run --rm --name mesos --privileged=true --shm-size=30gb -it --net host avhost/mesos-mini:1.11.0-0.2.0 /lib/systemd/systemd
+```
+
+2. Use nix-shell:
+
+
+```bash
+nix-shell
+```
+
+3. On the mesos-ui (http://localhost:5050) you will see Airflow as framework. 
+
+
+
