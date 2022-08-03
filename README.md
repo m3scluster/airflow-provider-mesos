@@ -98,6 +98,8 @@ docker run --rm --name mesos --privileged=true --shm-size=30gb -it --net host av
 
 ```bash
 nix-shell
+
+> airflow scheduler
 ```
 
 3. On the mesos-ui (http://localhost:5050) you will see Airflow as framework. 
