@@ -650,7 +650,7 @@ class MesosExecutor(BaseExecutor):
         l = list(self.task_queue.queue)
         a = self.list_to_json(l)
         response = Response(
-            str(json.dumps(a)), status=200, mimetype="application/json"
+            str(json.dumps(a, default=str)), status=200, mimetype="application/json"
         )
         return response
 
