@@ -26,6 +26,7 @@ vim airflow.cfg
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
 
 [mesos]
+mesos_ssl = True
 master = leader.mesos:5050
 framework_name = Airflow
 checkpoint = True

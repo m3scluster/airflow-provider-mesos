@@ -36,6 +36,8 @@ docker_sock = /var/run/docker.sock
 docker_volume_logs_name = airflowlogs
 docker_volume_logs_container_path = /home/airflow/airflow/logs/
 docker_environment = '{ "name":"<KEY>", "value":"<VALUE>" }, { ... },' // << do not forget the comma at the end.
+api_username = user
+api_password = password
 ```
 
 ## DAG example with mesos executor
@@ -63,10 +65,8 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
                 command="/bin/sleep 600",
                 docker_url='unix:///var/run/docker.sock'
                 executor_config={
-                        "MesosExecutor": {
-                                "cpus": 2.0,
-                                "mem_limit": 2048
-                        }
+                       "cpus": 2.0,
+                       "mem_limit": 2048
                 }         
         )
 
