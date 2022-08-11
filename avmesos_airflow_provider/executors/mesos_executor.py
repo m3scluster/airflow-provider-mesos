@@ -175,7 +175,6 @@ class AirflowMesosScheduler(MesosClient):
 
             if executor_config:
                 self.log.debug("Executor Config: %s", executor_config)
-
                 self.task_cpu = executor_config.get("cpus", cpu)
                 self.task_mem = executor_config.get("mem_limit", mem)
                 image = executor_config.get("image", self.mesos_slave_docker_image)
@@ -183,12 +182,11 @@ class AirflowMesosScheduler(MesosClient):
                 container_type = executor_config.get("container_type", "DOCKER")
                 airflow_task_id = executor_config.get("airflow_task_id", None)
             else:
-                executor_config = []
                 executor_config["airflow_task_id"] = None
 
             if airflow_task_id is not None:
                 # init tasks list for status_update
-                self.tasks[airflow_task_id] = None
+                self.tasks["airflow_task_id"] = None
             else:
                 airflow_task_id = "airflow." + str(tid)
 
