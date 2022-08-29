@@ -8,6 +8,7 @@ buildInputs = [
     python37Packages.pip
     python37Packages.virtualenv
     postgresql
+    lighttpd
 ];
 
 SOURCE_DATE_EPOCH = 315532800;
@@ -32,10 +33,12 @@ shellHook = ''
     pg_ctl -D /tmp/airflow -l logfile -o "--unix_socket_directories='/tmp'" start
     createdb -h /tmp airflow
     cp docs/examples/airflow.cfg /home/$USER/airflow/
-    cp docs/examples/dag.py /tmp/dags/
+    cp docs/examples/dags/* /tmp/dags/
+    cp docs/nixshell/lighttpd.conf /tmp/
     airflow db init
     airflow users create --username admin --role Admin -e test@example.com -f admin -l admin --password admin
 
+    lighttpd -f /tmp/lighttpd.conf
     airflow webserver > /dev/null&
 #airflow scheduler
     '';

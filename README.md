@@ -91,7 +91,7 @@ To use it, please follow the following steps:
 1. Run mesos-mini:
 
 ```bash
-docker run --rm --name mesos --privileged=true --shm-size=30gb -it --net host avhost/mesos-mini:1.11.0-0.2.0 /lib/systemd/systemd
+docker run --rm --name mesos --privileged=true --shm-size=30gb -it --net host avhost/mesos-mini:1.11.0-0.2.0-1 /lib/systemd/systemd
 ```
 
 2. Use nix-shell:

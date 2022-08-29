@@ -93,6 +93,7 @@ class AirflowMesosScheduler(MesosClient):
         self.mesos_docker_volume_driver = conf.get("mesos", "DOCKER_VOLUME_DRIVER")
         self.mesos_docker_volume_dag_name = conf.get("mesos", "DOCKER_VOLUME_DAG_NAME")
         self.mesos_docker_environment = conf.get("mesos", "DOCKER_ENVIRONMENT", fallback="")
+        self.mesos_docker_network_mode = conf.get("mesos", "DOCKER_NETWORK_MODE", fallback="HOST")
         self.mesos_docker_volume_dag_container_path = conf.get(
             "mesos", "DOCKER_VOLUME_DAG_CONTAINER_PATH"
         )
@@ -276,6 +277,7 @@ class AirflowMesosScheduler(MesosClient):
                     ],
                     "docker": {
                         "image": image,
+                        "network": self.mesos_docker_network_mode.upper(),
                         "force_pull_image": force_pull,
                         "privileged": "true",
                         "parameters": [
