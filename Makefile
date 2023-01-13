@@ -1,13 +1,6 @@
 #Dockerfile vars
 
 #vars
-IMAGENAME=mesos-m3s
-REPO=${registry}
-TAG=`git describe`
-BRANCH=`git rev-parse --abbrev-ref HEAD`
-BUILDDATE=`date -u +%Y-%m-%dT%H:%M:%SZ`
-IMAGEFULLNAME=${REPO}/${IMAGENAME}
-IMAGEFULLNAMEPUB=avhost/${IMAGENAME}
 
 .PHONY: help build bootstrap all
 

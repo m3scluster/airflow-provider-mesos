@@ -4,9 +4,9 @@ stdenv.mkDerivation {
 name = "python-env";
 
 buildInputs = [
-    python37
-    python37Packages.pip
-    python37Packages.virtualenv
+    python38
+    python38Packages.pip
+    python38Packages.virtualenv
     postgresql
     lighttpd
 ];
@@ -15,11 +15,11 @@ SOURCE_DATE_EPOCH = 315532800;
 PROJDIR = "${toString ./.}";
 
 shellHook = ''
-    echo "Using ${python37.name}"
+    echo "Using ${python38.name}"
 
     [ ! -d '$PROJDIR/python-dev' ] && virtualenv python-dev && echo "SETUP python-dev: DONE"
     source python-dev/bin/activate
-    pip install 'apache-airflow==2.1.2' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.1.2/constraints-3.7.txt"     
+    pip install 'apache-airflow==2.5.0' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.5.0/constraints-3.8.txt"
     pip install avmesos psycopg2 waitress apache-airflow-providers-docker
     make install-dev
 
