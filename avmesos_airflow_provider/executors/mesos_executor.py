@@ -423,6 +423,7 @@ class MesosExecutor(BaseExecutor):
 
         task_cpu = conf.getfloat("mesos", "TASK_CPU", fallback=0.1)
         task_memory = conf.getint("mesos", "TASK_MEMORY", fallback=256)
+        framework_failover_timeout = conf.getint("mesos", "FAILOVER_TIMEOUT", fallback=604800)
 
         if conf.getboolean("mesos", "CHECKPOINT"):
             framework_checkpoint = True
@@ -441,9 +442,6 @@ class MesosExecutor(BaseExecutor):
                     # Set the Framework ID to let the scheduler reconnect
                     # with running tasks.
                     framework_id = connection.extra
-
-                # Set Timeout in the case of a mesos master leader change
-                framework_failover_timeout = conf.getint("mesos", "FAILOVER_TIMEOUT")
 
         else:
             framework_checkpoint = False
