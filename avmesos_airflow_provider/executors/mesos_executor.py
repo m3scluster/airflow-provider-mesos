@@ -27,6 +27,7 @@ import threading
 import json
 import urllib3
 import ast
+import prometheus_client as prom 
 
 
 from avmesos.client import MesosClient
@@ -43,6 +44,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from waitress import serve
 
 FRAMEWORK_CONNID_PREFIX = "mesos_framework_"
+
+AIRFLOW_QUEUE_GAUGE = prom.Gauge('airflow_queue_gauge', 'Amount of tasks in Airflow queue')
+AIRFLOW_MESOS_QUEUE_GAUGE = prom.Gauge('airflow_mesos_queue_gauge', 'Amount of tasks already send to mesos')
 
 urllib3.disable_warnings()
 
@@ -113,6 +117,10 @@ class AirflowMesosScheduler(MesosClient):
 
     def resource_heartbeat(self, heartbeat):
         """If we got a heartbeat, run checks"""
+
+        """Set prometheus metric"""
+        AIRFLOW_MESOS_QUEUE_GAUGE.set(self.task_queue.qsize())
+
         self.log.info("Heartbeat")
         if self.task_queue.empty():
             self.log.info("Suppress Mesos Framework")
@@ -530,11 +538,16 @@ class MesosExecutor(BaseExecutor):
 
 
         Thread(target=serve, args=[app], daemon=True, kwargs={"port": "11000"}).start()
+        prom.start_http_server(8100) 
 
 
 
     def sync(self) -> None:
         """Updates states of the tasks."""
+
+        """Set prometheus metric"""
+        AIRFLOW_QUEUE_GAUGE.set(self.task_queue.qsize())
+
         self.log.debug("Update state of tasks")
         if self.running:
             self.log.debug("self.running: %s", self.running)
@@ -566,6 +579,7 @@ class MesosExecutor(BaseExecutor):
         )
         self.validate_command(command)
         self.task_queue.put((key, command, executor_config))
+
 
     def end(self) -> None:
         """Called when the executor shuts down"""

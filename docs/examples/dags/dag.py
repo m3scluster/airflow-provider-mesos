@@ -25,10 +25,6 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
                    "cpus": 7.5,
                    "mem_limit": 32768
                 },
-                mounts=[
-                        # Quelle <> Ziel
-                        Mount("/tmp", "/mnt", "bind" ),
-                ],
                 cpus=8,
                 mem_limit='64g'
         )

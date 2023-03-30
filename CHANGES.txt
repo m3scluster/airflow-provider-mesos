@@ -6,6 +6,7 @@
 - Add: Decline all outstanding offers if there are no tasks in queue
 - Fix: "object has no attribute execution_date"
 - API Add: Add api call to get out all queued tasks 
+- Add: Prometheus metrics for airflow_queue_gauge and airflow_mesos_queue_gauge
 
 ## v0.1.4
 

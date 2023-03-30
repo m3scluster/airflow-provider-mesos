@@ -19,7 +19,7 @@ shellHook = ''
     
     [ ! -d '$PROJDIR/python-dev' ] && virtualenv python-dev && echo "SETUP python-dev: DONE"
     source python-dev/bin/activate
-    pip install 'apache-airflow==2.5.0' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.5.0/constraints-3.10.txt"
+    pip install 'apache-airflow==2.5.2' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.5.2/constraints-3.10.txt"
     pip install apache-airflow-providers-docker
     pip install avmesos psycopg2 waitress
     make install-dev
