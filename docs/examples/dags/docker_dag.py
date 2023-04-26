@@ -13,7 +13,7 @@ default_args = {
         'depend_on_past'        : True,
 }
 
-with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * * * ", catchup=True, start_date=datetime.now()) as dag:
+with DAG('docker_operator', default_args=default_args, schedule_interval="*/10 * * * * ", catchup=True, start_date=datetime.now()) as dag:
         t1 = DockerOperator(
                 task_id='docker_command1',
                 image='avhost/docker-airflow',
@@ -25,10 +25,6 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
                    "cpus": 7.5,
                    "mem_limit": 32768
                 },
-                mounts=[
-                        # Quelle <> Ziel
-                        Mount("/tmp", "/mnt", "bind" ),
-                ],
                 cpus=8,
                 mem_limit='64g'
         )
