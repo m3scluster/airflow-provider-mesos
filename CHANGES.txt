@@ -7,6 +7,8 @@
 - Fix: "object has no attribute execution_date"
 - API Add: Add api call to get out all queued tasks 
 - Add: Prometheus metrics for airflow_queue_gauge and airflow_mesos_queue_gauge
+- Fix: ISSUE-4
+- Add: decline RefuseSeconds to give other frameworks the chance to get offers
 
 ## v0.1.4
 

@@ -73,7 +73,7 @@ class AirflowMesosScheduler(MesosClient):
 
     # pylint: disable=super-init-not-called
     def __init__(
-        self, executor, task_queue, result_queue, task_cpu: int = 1, task_mem: int = 256
+        self, executor, task_queue, result_queue, task_cpu: int = 1, task_mem: float = 256.0
     ):
         self.task_queue = task_queue
         self.result_queue = result_queue
@@ -131,17 +131,34 @@ class AirflowMesosScheduler(MesosClient):
        
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
-        if (not self.task_queue.empty()):
-            for i, offer in enumerate(offers):
-                if not self.run_job(offer):
-                     offertmp = offer.get_offer()
-                     self.log.info("Declined Offer: %s", offertmp["id"]["value"])
-                     offer.decline()
-        else:
-            for i, offer in enumerate(offers):
-                offertmp = offer.get_offer()
-                self.log.info("Declined Offer: %s", offertmp["id"]["value"])
-                offer.decline()
+        try:
+            if (not self.task_queue.empty()):
+                for index in range(len(offers)):
+                    offer = offers[index]
+                    if not self.run_job(offer):
+                         offertmp = offer.get_offer()
+                         self.log.info("Declined Offer: %s", offertmp["id"]["value"])
+                         offerOptions = {
+                             "Filters": {
+                                 "RefuseSeconds": 120.0
+                             }
+                         }
+                         offer.decline(options=offerOptions)
+            else:
+                for index in range(len(offers)):
+                    offer = offers[index]
+                    offertmp = offer.get_offer()
+                    self.log.info("Declined Offer: %s", offertmp["id"]["value"])
+                    offerOptions = {
+                        "Filters": {
+                            "RefuseSeconds": 120.0
+                        }
+                    }
+                    offer.decline()
+        except:
+            self.log.error("Error during offer handling")
+
+
 
 
     # pylint: disable=too-many-branches
@@ -151,7 +168,7 @@ class AirflowMesosScheduler(MesosClient):
         tasks = []
         option = {}
         offer_cpus = 0
-        offer_mem = 0
+        offer_mem = 0.0
         force_pull = "true"
         container_type = "DOCKER"
         cpu = self.task_cpu
@@ -183,13 +200,16 @@ class AirflowMesosScheduler(MesosClient):
             self.task_counter += 1
 
             if executor_config:
-                self.log.debug("Executor Config: %s", executor_config)
-                self.task_cpu = executor_config.get("cpus", cpu)
-                self.task_mem = executor_config.get("mem_limit", mem)
-                image = executor_config.get("image", self.mesos_slave_docker_image)
-                force_pull = str(executor_config.get("force_pull", "true")).lower()
-                container_type = executor_config.get("container_type", "DOCKER")
-                airflow_task_id = executor_config.get("airflow_task_id", None)
+                try:
+                    self.log.debug("Executor Config: %s", executor_config)
+                    self.task_cpu = executor_config.get("cpus", cpu)
+                    self.task_mem = executor_config.get("mem_limit", mem)
+                    image = executor_config.get("image", self.mesos_slave_docker_image)
+                    force_pull = str(executor_config.get("force_pull", "true")).lower()
+                    container_type = executor_config.get("container_type", "DOCKER")
+                    airflow_task_id = executor_config.get("airflow_task_id", None)
+                except:
+                    executor_config["airflow_task_id"] = None
             else:
                 executor_config["airflow_task_id"] = None
 
@@ -252,6 +272,10 @@ class AirflowMesosScheduler(MesosClient):
                             {
                                 "name": "AIRFLOW__LOGGING__LOGGING_LEVEL",
                                 "value": self.logging_logging_level,
+                            },
+                            {
+                                "name": "__MESOS_SCHEDULER_DAG",
+                                "value": cmd[8],
                             },
                         ]
                     },
@@ -427,7 +451,7 @@ class MesosExecutor(BaseExecutor):
 
         framework_name = get_framework_name()
         framework_id = None
-        framework_role = conf.get("mesos", "FRAMEWORK_ROLE", fallback="marathon")
+        framework_role = conf.get("mesos", "FRAMEWORK_ROLE", fallback="airflow")
 
         task_cpu = conf.getfloat("mesos", "TASK_CPU", fallback=0.1)
         task_memory = conf.getint("mesos", "TASK_MEMORY", fallback=256)
