@@ -1,6 +1,6 @@
 ## Changelog
 
-## master
+## v0.2.1
 
 - Add: Non SSL support for mesos.
 - Add: Decline all outstanding offers if there are no tasks in queue
