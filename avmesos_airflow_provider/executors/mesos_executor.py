@@ -457,7 +457,7 @@ class MesosExecutor(BaseExecutor):
         task_memory = conf.getint("mesos", "TASK_MEMORY", fallback=256)
         framework_failover_timeout = conf.getint("mesos", "FAILOVER_TIMEOUT", fallback=604800)
 
-        if conf.getboolean("mesos", "CHECKPOINT"):
+        if conf.getboolean("mesos", "CHECKPOINT", fallback=True):
             framework_checkpoint = True
 
             if conf.get("mesos", "FAILOVER_TIMEOUT"):
@@ -489,7 +489,7 @@ class MesosExecutor(BaseExecutor):
         )
 
         self.master_urls = "http://" + master
-        if conf.getboolean("mesos", "MESOS_SSL"):
+        if conf.getboolean("mesos", "MESOS_SSL", fallback=False):
           self.master_urls = "https://" + master
 
         self.client = MesosClient(
