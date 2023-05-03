@@ -108,6 +108,8 @@ class AirflowMesosScheduler(MesosClient):
             "mesos", "DOCKER_VOLUME_LOGS_CONTAINER_PATH"
         )
         self.mesos_docker_sock = conf.get("mesos", "DOCKER_SOCK")
+        self.mesos_fetch_uri = conf.get("mesos", "MESOS_FETCH_URI", fallback="")
+        self.mesos_fetch_uri_username = conf.get("mesos", "MESOS_FETCH_URI_USERNAME", fallback="root")
         self.core_sql_alchemy_conn = conf.get("core", "SQL_ALCHEMY_CONN")
         self.core_fernet_key = conf.get("core", "FERNET_KEY")
         self.logging_logging_level = conf.get("logging", "LOGGING_LEVEL")
@@ -131,32 +133,29 @@ class AirflowMesosScheduler(MesosClient):
        
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
-        try:
-            if (not self.task_queue.empty()):
-                for index in range(len(offers)):
-                    offer = offers[index]
-                    if not self.run_job(offer):
-                         offertmp = offer.get_offer()
-                         self.log.info("Declined Offer: %s", offertmp["id"]["value"])
-                         offerOptions = {
-                             "Filters": {
-                                 "RefuseSeconds": 120.0
-                             }
+        if (not self.task_queue.empty()):
+            for index in range(len(offers)):
+                offer = offers[index]
+                if not self.run_job(offer):
+                     offertmp = offer.get_offer()
+                     self.log.info("Declined Offer: %s", offertmp["id"]["value"])
+                     offerOptions = {
+                         "Filters": {
+                             "RefuseSeconds": 120.0
                          }
-                         offer.decline(options=offerOptions)
-            else:
-                for index in range(len(offers)):
-                    offer = offers[index]
-                    offertmp = offer.get_offer()
-                    self.log.info("Declined Offer: %s", offertmp["id"]["value"])
-                    offerOptions = {
-                        "Filters": {
-                            "RefuseSeconds": 120.0
-                        }
+                     }
+                     offer.decline(options=offerOptions)
+        else:
+            for index in range(len(offers)):
+                offer = offers[index]
+                offertmp = offer.get_offer()
+                self.log.info("Declined Offer: %s", offertmp["id"]["value"])
+                offerOptions = {
+                    "Filters": {
+                        "RefuseSeconds": 120.0
                     }
-                    offer.decline()
-        except:
-            self.log.error("Error during offer handling")
+                }
+                offer.decline()
 
 
 
@@ -234,12 +233,13 @@ class AirflowMesosScheduler(MesosClient):
 
             self.task_key_map[airflow_task_id] = key
 
-            self.log.info("Launching task %d using offer %s", tid, offer["id"]["value"])
 
             if hasattr(key, 'execution_date'):
                 name = key.dag_id + "_" + key.task_id + "_" + str(key.execution_date.date()) + ":" + str(key.execution_date.time())
             else:
                 name = key.dag_id + "_" + key.task_id
+
+            self.log.info("Launching task %d using offer %s", tid, offer["id"]["value"])
 
             task = {
                 "name": name,
@@ -270,12 +270,12 @@ class AirflowMesosScheduler(MesosClient):
                                 "value": self.core_fernet_key,
                             },
                             {
-                                "name": "AIRFLOW__LOGGING__LOGGING_LEVEL",
-                                "value": self.logging_logging_level,
+                                "name": "AIRFLOW__CORE__LOAD_EXAMPLES",
+                                "value": "false",
                             },
                             {
-                                "name": "__MESOS_SCHEDULER_DAG",
-                                "value": cmd[8],
+                                "name": "AIRFLOW__LOGGING__LOGGING_LEVEL",
+                                "value": self.logging_logging_level,
                             },
                         ]
                     },
@@ -322,6 +322,23 @@ class AirflowMesosScheduler(MesosClient):
                     },
                 },
             }
+
+            # fetch dags from uri
+            if len(self.mesos_fetch_uri) > 0:
+                sandBoxEnv = {
+                    "name": "AIRFLOW__CORE__DAGS_FOLDER",
+                    "value": "/mnt/mesos/sandbox",
+                }
+                task["command"]["environment"]["variables"].append(sandBoxEnv)
+                dagFile = cmd[8].replace('DAGS_FOLDER/', '')
+                task["command"]["uris"] = [{
+                    "value": self.mesos_fetch_uri + "/" + dagFile,
+                    "extract": False,
+                    "executable": False,
+                    "cache": False,
+                    "outputfile": dagFile,
+                }] 
+                task["command"]["user"] = self.mesos_fetch_uri_username
 
             # concat custom docker environment variables if they are configured
             if len(self.mesos_docker_environment) > 0:
