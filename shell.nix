@@ -25,12 +25,15 @@ shellHook = ''
     make install-dev
 
     mkdir /tmp/airflow
+    mkdir /tmp/postgresql
     mkdir /tmp/dags
     mkdir /home/$USER/airflow
 
-    initdb -D /tmp/airflow
-    pg_ctl -D /tmp/airflow -l logfile -o "--unix_socket_directories='/tmp'" start
-    createdb -h /tmp airflow
+    initdb -D /tmp/postgresql
+    cp docs/nixshell/pg_hba.conf /tmp/postgresql
+    pg_ctl -D /tmp/postgresql -l logfile -o "--unix_socket_directories='/tmp' --listen_addresses='*'" start
+    createuser -h /tmp -s airflow 
+    createdb -h /tmp airflow -O airflow
     cp docs/examples/airflow.cfg /home/$USER/airflow/
     cp docs/examples/dags/* /tmp/dags/
     cp docs/nixshell/lighttpd.conf /tmp/
