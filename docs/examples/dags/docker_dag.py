@@ -22,8 +22,8 @@ with DAG('docker_operator', default_args=default_args, schedule_interval="*/10 *
                 command="/bin/sleep 600",
                 docker_url='unix:///var/run/docker.sock',
                 executor_config={
-                   "cpus": 7.5,
-                   "mem_limit": 32768
+                   "cpus": 2,
+                   "mem_limit": 2048
                 },
                 cpus=8,
                 mem_limit='64g'
