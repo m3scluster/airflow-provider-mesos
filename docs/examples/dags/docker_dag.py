@@ -16,29 +16,31 @@ default_args = {
 with DAG('docker_operator', default_args=default_args, schedule_interval="*/10 * * * * ", catchup=True, start_date=datetime.now()) as dag:
         t1 = DockerOperator(
                 task_id='docker_command1',
-                image='avhost/docker-airflow',
+                image='alpine:latest',
                 api_version='auto',
                 auto_remove=False,
                 command="/bin/sleep 600",
                 docker_url='unix:///var/run/docker.sock',
+                retries=0,
                 executor_config={
-                   "cpus": 7.5,
-                   "mem_limit": 32768
+                   "cpus": 1,
+                   "mem_limit": "2g"
                 },
-                cpus=8,
+                cpus=1,
                 mem_limit='64g'
         )
 
         t2 = DockerOperator(
                 task_id='docker_command2',
-                image='avhost/docker-airflow',
+                image='alpine:latest',
                 api_version='auto',
                 auto_remove=False,
                 command="/bin/sleep 600",
                 docker_url='unix:///var/run/docker.sock',
+                retries=0,
                 executor_config={
-                   "cpus": 2.0,
-                   "mem_limit": 2048
+                   "cpus": 1,
+                   "mem_limit": "2g"
                 }         
         )
 
