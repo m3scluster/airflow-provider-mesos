@@ -20,7 +20,7 @@ Apache Mesos Provider to scheduler Apache Airflow DAG's under Mesos.
 # under the License.
 
 from queue import Queue
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from threading import Thread
 
 import threading
@@ -29,12 +29,10 @@ import urllib3
 import ast
 import prometheus_client as prom 
 
-
 from avmesos.client import MesosClient
-
 from airflow.configuration import conf
 from airflow.exceptions import AirflowException
-from airflow.executors.base_executor import BaseExecutor, CommandType
+from airflow.executors.base_executor import BaseExecutor
 from airflow.models.taskinstance import TaskInstanceKey
 from airflow.utils.session import provide_session
 from airflow.utils.state import State
@@ -55,6 +53,8 @@ auth = HTTPBasicAuth()
 api_username = ""
 api_password = ""
 
+CommandType = List[str]
+
 def get_framework_name():
     """Get the mesos framework name if its set in airflow.cfg"""
     return conf.get("mesos", "FRAMEWORK_NAME")
@@ -73,7 +73,7 @@ class AirflowMesosScheduler(MesosClient):
 
     # pylint: disable=super-init-not-called
     def __init__(
-        self, executor, task_queue, result_queue, task_cpu: int = 1, task_mem: float = 256.0
+        self, executor, task_queue, result_queue, task_cpu: float = 0.1, task_mem: float = 256.0
     ):
         self.task_queue = task_queue
         self.result_queue = result_queue
@@ -98,15 +98,9 @@ class AirflowMesosScheduler(MesosClient):
         self.mesos_docker_volume_dag_name = conf.get("mesos", "DOCKER_VOLUME_DAG_NAME")
         self.mesos_docker_environment = conf.get("mesos", "DOCKER_ENVIRONMENT", fallback="")
         self.mesos_docker_network_mode = conf.get("mesos", "DOCKER_NETWORK_MODE", fallback="HOST")
-        self.mesos_docker_volume_dag_container_path = conf.get(
-            "mesos", "DOCKER_VOLUME_DAG_CONTAINER_PATH"
-        )
-        self.mesos_docker_volume_logs_name = conf.get(
-            "mesos", "DOCKER_VOLUME_LOGS_NAME"
-        )
-        self.mesos_docker_volume_logs_container_path = conf.get(
-            "mesos", "DOCKER_VOLUME_LOGS_CONTAINER_PATH"
-        )
+        self.mesos_docker_volume_dag_container_path = conf.get("mesos", "DOCKER_VOLUME_DAG_CONTAINER_PATH")
+        self.mesos_docker_volume_logs_name = conf.get("mesos", "DOCKER_VOLUME_LOGS_NAME")
+        self.mesos_docker_volume_logs_container_path = conf.get("mesos", "DOCKER_VOLUME_LOGS_CONTAINER_PATH")
         self.mesos_docker_sock = conf.get("mesos", "DOCKER_SOCK")
         self.mesos_fetch_uri = conf.get("mesos", "MESOS_FETCH_URI", fallback="")
         self.mesos_fetch_uri_username = conf.get("mesos", "MESOS_FETCH_URI_USERNAME", fallback="root")
@@ -157,8 +151,15 @@ class AirflowMesosScheduler(MesosClient):
                 }
                 offer.decline()
 
+    def convert_memory_to_float(self, memory_str):
+        memory_str = memory_str.lower()
+        if memory_str.endswith('g'):
+            memory_val = float(memory_str[:-1])
+            memory_val *= 1024  # Convert from GB to MB
+        elif memory_str.endswith('mb'):
+            memory_val = float(memory_str[:-2])
 
-
+        return memory_val        
 
     # pylint: disable=too-many-branches
     def run_job(self, mesos_offer):
@@ -166,8 +167,8 @@ class AirflowMesosScheduler(MesosClient):
         offer = mesos_offer.get_offer()
         tasks = []
         option = {}
-        offer_cpus = 0
-        offer_mem = 0.0
+        offer_cpus = 0.1
+        offer_mem = 256.0
         force_pull = "true"
         container_type = "DOCKER"
         cpu = self.task_cpu
@@ -178,17 +179,12 @@ class AirflowMesosScheduler(MesosClient):
         for resource in offer["resources"]:
             if resource["name"] == "cpus":
                 offer_cpus = resource["scalar"]["value"]
-                self.log.info("CPU's %d", offer_cpus)
+                self.log.info("Offer CPU's %f", offer_cpus)
             elif resource["name"] == "mem":
                 offer_mem = resource["scalar"]["value"]
-                self.log.info("MEM %d", offer_mem)
+                self.log.info("Offer MEM %f", offer_mem)
 
-        self.log.debug(
-            "Received offer %s with cpus: %s and mem: %s",
-            offer["id"]["value"],
-            offer_cpus,
-            offer_mem,
-        )
+        self.log.debug("Received offer %s with cpus: %f and mem: %f", offer["id"]["value"], offer_cpus, offer_mem)
 
         remaining_cpus = offer_cpus
         remaining_mem = offer_mem
@@ -198,11 +194,12 @@ class AirflowMesosScheduler(MesosClient):
             tid = self.task_counter
             self.task_counter += 1
 
+
             if executor_config:
                 try:
-                    self.log.debug("Executor Config: %s", executor_config)
+                    self.log.info("Executor Config: %s", executor_config)
                     self.task_cpu = executor_config.get("cpus", cpu)
-                    self.task_mem = executor_config.get("mem_limit", mem)
+                    self.task_mem = self.convert_memory_to_float(executor_config.get("mem_limit", mem))
                     image = executor_config.get("image", self.mesos_slave_docker_image)
                     force_pull = str(executor_config.get("force_pull", "true")).lower()
                     container_type = executor_config.get("container_type", "DOCKER")
@@ -221,13 +218,16 @@ class AirflowMesosScheduler(MesosClient):
             # set the airflow_task_id as executor config
             executor_config["airflow_task_id"] = airflow_task_id
 
+            if float(self.task_mem) < 6.0:
+                self.task_mem =  float(conf.get("mesos", "TASK_MEMORY", fallback=256.0))
+
             # if the resources does not match, add the task again
             if float(remaining_cpus) < float(self.task_cpu):
-                self.log.info("Offered CPU's for task %d are not enough: got: %d need: %d - %s", tid, remaining_cpus, self.task_cpu, offer["id"]["value"])
+                self.log.info("Offered CPU's for task %d are not enough: got: %f need: %f - %s", tid, remaining_cpus, self.task_cpu, offer["id"]["value"])
                 self.task_queue.put((key, cmd, executor_config))
                 return False
             if float(remaining_mem) < float(self.task_mem):
-                self.log.info("Offered MEM's for task %d are not enough: got: %d need: %d - %s", tid, remaining_mem, self.task_mem, offer["id"]["value"])
+                self.log.info("Offered MEM's for task %d are not enough: got: %f need: %f - %s", tid, remaining_mem, self.task_mem, offer["id"]["value"])
                 self.task_queue.put((key, cmd, executor_config))
                 return False
 
@@ -323,6 +323,8 @@ class AirflowMesosScheduler(MesosClient):
                 },
             }
 
+            self.log.debug(json.dumps(task, indent=4))
+
             # fetch dags from uri
             if len(self.mesos_fetch_uri) > 0:
                 sandBoxEnv = {
@@ -369,7 +371,7 @@ class AirflowMesosScheduler(MesosClient):
         else:
             mesos_offer.decline()
             return False
-
+        
     @provide_session
     def subscribed(self, driver, session=None):
         """
@@ -496,7 +498,7 @@ class MesosExecutor(BaseExecutor):
             framework_checkpoint = False
 
         self.log.info(
-            "MesosFramework master : %s, name : %s, cpu : %d, mem : %d, checkpoint : %s, id : %s",
+            "MesosFramework master : %s, name : %s, cpu : %f, mem : %f, checkpoint : %s, id : %s",
             master,
             framework_name,
             task_cpu,
@@ -536,9 +538,7 @@ class MesosExecutor(BaseExecutor):
             self.client.principal = conf.get("mesos", "DEFAULT_PRINCIPAL")
             self.client.secret = conf.get("mesos", "DEFAULT_SECRET")
 
-        driver = AirflowMesosScheduler(
-            self, self.task_queue, self.result_queue, task_cpu, task_memory
-        )
+        driver = AirflowMesosScheduler(self, self.task_queue, self.result_queue, task_cpu, task_memory)
         self.driver = driver
         self.client.on(MesosClient.SUBSCRIBED, driver.subscribed)
         self.client.on(MesosClient.UPDATE, driver.status_update)

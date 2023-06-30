@@ -15,11 +15,11 @@ SOURCE_DATE_EPOCH = 315532800;
 PROJDIR = "${toString ./.}";
 
 shellHook = ''
-    echo "Using ${python38.name}"
+    echo "Using ${python310.name}"
     
     [ ! -d '$PROJDIR/python-dev' ] && virtualenv python-dev && echo "SETUP python-dev: DONE"
     source python-dev/bin/activate
-    pip install 'apache-airflow==2.5.3' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.5.3/constraints-3.10.txt"
+    pip install 'apache-airflow==2.6.0' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.6.0/constraints-3.10.txt"
     pip install apache-airflow-providers-docker
     pip install avmesos psycopg2 waitress
     make install-dev

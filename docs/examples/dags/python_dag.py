@@ -23,6 +23,7 @@ with DAG('python_operator', default_args=default_args, schedule_interval="*/10 *
                 task_id='python_command1',
                 provide_context=True,
                 python_callable=my_function,
+                retries=2,                
                 op_kwargs={'source': 'test', 'target': 'done/test'},
                 dag=dag
         )
