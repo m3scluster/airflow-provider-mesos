@@ -156,7 +156,7 @@ class AirflowMesosScheduler(MesosClient):
         if memory_str.endswith('g'):
             memory_val = float(memory_str[:-1])
             memory_val *= 1024  # Convert from GB to MB
-        elif memory_str.endswith('mb'):
+        elif memory_str.endswith('m'):
             memory_val = float(memory_str[:-2])
 
         return memory_val        
