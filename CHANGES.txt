@@ -1,5 +1,9 @@
 ## Changelog
 
+## master
+
+- Fix: wrong task id output in airflow logs.
+
 ## v0.2.1
 
 - Add: Non SSL support for mesos.

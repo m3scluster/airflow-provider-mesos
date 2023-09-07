@@ -223,11 +223,11 @@ class AirflowMesosScheduler(MesosClient):
 
             # if the resources does not match, add the task again
             if float(remaining_cpus) < float(self.task_cpu):
-                self.log.info("Offered CPU's for task %d are not enough: got: %f need: %f - %s", tid, remaining_cpus, self.task_cpu, offer["id"]["value"])
+                self.log.info("Offered CPU's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, remaining_cpus, self.task_cpu, offer["id"]["value"])
                 self.task_queue.put((key, cmd, executor_config))
                 return False
             if float(remaining_mem) < float(self.task_mem):
-                self.log.info("Offered MEM's for task %d are not enough: got: %f need: %f - %s", tid, remaining_mem, self.task_mem, offer["id"]["value"])
+                self.log.info("Offered MEM's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, remaining_mem, self.task_mem, offer["id"]["value"])
                 self.task_queue.put((key, cmd, executor_config))
                 return False
 
@@ -239,7 +239,7 @@ class AirflowMesosScheduler(MesosClient):
             else:
                 name = key.dag_id + "_" + key.task_id
 
-            self.log.info("Launching task %d using offer %s", tid, offer["id"]["value"])
+            self.log.info("Launching task %d using offer %s", airflow_task_id, offer["id"]["value"])
 
             task = {
                 "name": name,
