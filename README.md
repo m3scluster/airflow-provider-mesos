@@ -40,6 +40,7 @@ mesos_ssl = True
 master = leader.mesos:5050
 framework_name = Airflow
 checkpoint = True
+attributes = False
 failover_timeout = 604800
 command_shell = True
 task_cpu = 1
@@ -57,6 +58,7 @@ docker_volume_logs_container_path = /home/airflow/airflow/logs/
 docker_environment = '[{ "name":"<KEY>", "value":"<VALUE>" }, { ... }]'
 api_username = <USERNAME FOR THIS API>
 api_password = <PASSWORD FOR THIS API>
+
 
 ```
 

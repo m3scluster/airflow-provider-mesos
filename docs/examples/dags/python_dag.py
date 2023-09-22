@@ -13,7 +13,7 @@ default_args = {
         'depend_on_past'        : True,
 }
 
-with DAG('python_operator', default_args=default_args, schedule_interval="*/10 * * * * ", catchup=True, start_date=datetime.now()) as dag:
+with DAG('python_operator', default_args=default_args, schedule_interval=None, start_date=datetime.now()) as dag:
 
         def my_function(x):
                 print("This is a Python function.")
