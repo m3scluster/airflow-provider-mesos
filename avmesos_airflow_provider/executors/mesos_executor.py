@@ -73,12 +73,13 @@ class AirflowMesosScheduler(MesosClient):
 
     # pylint: disable=super-init-not-called
     def __init__(
-        self, executor, task_queue, result_queue, task_cpu: float = 0.1, task_mem: float = 256.0
+        self, executor, task_queue, result_queue, task_cpu: float = 0.1, task_mem: float = 256.0, task_disk: float = 1000.0
     ):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.task_cpu = task_cpu
         self.task_mem = task_mem
+        self.task_disk = task_disk
         self.task_counter = 0
         self.task_key_map: Dict[str, str] = {}
         self.log = executor.log
@@ -104,6 +105,7 @@ class AirflowMesosScheduler(MesosClient):
         self.mesos_docker_sock = conf.get("mesos", "DOCKER_SOCK")
         self.mesos_fetch_uri = conf.get("mesos", "MESOS_FETCH_URI", fallback="")
         self.mesos_fetch_uri_username = conf.get("mesos", "MESOS_FETCH_URI_USERNAME", fallback="root")
+        self.mesos_attributes = conf.getboolean("mesos", "ATTRIBUTES", fallback=False)
         self.core_sql_alchemy_conn = conf.get("core", "SQL_ALCHEMY_CONN")
         self.core_fernet_key = conf.get("core", "FERNET_KEY")
         self.logging_logging_level = conf.get("logging", "LOGGING_LEVEL")
@@ -169,26 +171,19 @@ class AirflowMesosScheduler(MesosClient):
         option = {}
         offer_cpus = 0.1
         offer_mem = 256.0
+        offer_disk = 1000.0
         force_pull = "true"
         container_type = "DOCKER"
         cpu = self.task_cpu
         mem = self.task_mem
+        disk = self.task_disk
         image = self.mesos_slave_docker_image
         airflow_task_id = None
+        attribute_airflow = "false"  """ have to be string """
+        self.task_cpu = float(conf.get("mesos", "TASK_CPU", fallback=0.1))
+        self.task_mem = float(conf.get("mesos", "TASK_MEMORY", fallback=256.0))
+        self.task_disk = float(conf.get("mesos", "TASK_DISK", fallback=1000.0))
 
-        for resource in offer["resources"]:
-            if resource["name"] == "cpus":
-                offer_cpus = resource["scalar"]["value"]
-                self.log.info("Offer CPU's %f", offer_cpus)
-            elif resource["name"] == "mem":
-                offer_mem = resource["scalar"]["value"]
-                self.log.info("Offer MEM %f", offer_mem)
-
-        self.log.debug("Received offer %s with cpus: %f and mem: %f", offer["id"]["value"], offer_cpus, offer_mem)
-
-        remaining_cpus = offer_cpus
-        remaining_mem = offer_mem
-        
         if (not self.task_queue.empty()):
             key, cmd, executor_config = self.task_queue.get()
             tid = self.task_counter
@@ -204,30 +199,51 @@ class AirflowMesosScheduler(MesosClient):
                     force_pull = str(executor_config.get("force_pull", "true")).lower()
                     container_type = executor_config.get("container_type", "DOCKER")
                     airflow_task_id = executor_config.get("airflow_task_id", None)
-                except:
+                except Exception as e:
+                    self.log.error("Error parsing executor_config: %s", str(e))
                     executor_config["airflow_task_id"] = None
+
             else:
                 executor_config["airflow_task_id"] = None
 
-            if airflow_task_id is not None:
-                # init tasks list for status_update
-                self.tasks["airflow_task_id"] = None
-            else:
+            if airflow_task_id is None:
                 airflow_task_id = "airflow." + str(tid)
+
+            # get CPU, mem and disk from offer
+            for resource in offer["resources"]:
+                if resource["name"] == "cpus":
+                    offer_cpus = resource["scalar"]["value"]
+                elif resource["name"] == "mem":
+                    offer_mem = resource["scalar"]["value"]
+                elif resource["name"] == "disk":
+                    offer_disk = resource["scalar"]["value"]
+
+            self.log.debug("Received offer %s with cpus: %f and mem: %f and disk: %f for task %s", offer["id"]["value"], offer_cpus, offer_mem, offer_disk, airflow_task_id)
 
             # set the airflow_task_id as executor config
             executor_config["airflow_task_id"] = airflow_task_id
 
-            if float(self.task_mem) < 6.0:
-                self.task_mem =  float(conf.get("mesos", "TASK_MEMORY", fallback=256.0))
+            if self.mesos_attributes:
+                for attribute in offer["attributes"]:
+                    if attribute["name"] == "airflow":
+                        attribute_airflow = attribute["text"]["value"]
+
+                if attribute_airflow == "false":
+                    self.log.info("Offered node is not valid for airflow jobs. %s (%s)", airflow_task_id, offer["id"]["value"])
+                    self.task_queue.put((key, cmd, executor_config))
+                    return False
 
             # if the resources does not match, add the task again
-            if float(remaining_cpus) < float(self.task_cpu):
-                self.log.info("Offered CPU's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, remaining_cpus, self.task_cpu, offer["id"]["value"])
+            if float(offer_cpus) < float(self.task_cpu):
+                self.log.info("Offered CPU's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, offer_cpus, self.task_cpu, offer["id"]["value"])
                 self.task_queue.put((key, cmd, executor_config))
                 return False
-            if float(remaining_mem) < float(self.task_mem):
-                self.log.info("Offered MEM's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, remaining_mem, self.task_mem, offer["id"]["value"])
+            if float(offer_mem) < float(self.task_mem):
+                self.log.info("Offered MEM's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, offer_mem, self.task_mem, offer["id"]["value"])
+                self.task_queue.put((key, cmd, executor_config))
+                return False
+            if float(offer_disk) < float(self.task_disk):
+                self.log.info("Offered DISK's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, offer_disk, self.task_disk, offer["id"]["value"])
                 self.task_queue.put((key, cmd, executor_config))
                 return False
 
@@ -239,7 +255,7 @@ class AirflowMesosScheduler(MesosClient):
             else:
                 name = key.dag_id + "_" + key.task_id
 
-            self.log.info("Launching task %d using offer %s", airflow_task_id, offer["id"]["value"])
+            self.log.info("Launching task %s using offer %s", airflow_task_id, offer["id"]["value"])
 
             task = {
                 "name": name,
@@ -255,6 +271,11 @@ class AirflowMesosScheduler(MesosClient):
                         "name": "mem",
                         "type": "SCALAR",
                         "scalar": {"value": self.task_mem},
+                    },
+                    {
+                        "name": "disk",
+                        "type": "SCALAR",
+                        "scalar": {"value": self.task_disk},
                     },
                 ],
                 "command": {
@@ -363,8 +384,6 @@ class AirflowMesosScheduler(MesosClient):
             option = {"Filters": {"RefuseSeconds": "0.5"}}
 
             tasks.append(task)
-            remaining_cpus -= self.task_cpu
-            remaining_mem -= self.task_mem
         if len(tasks) > 0:            
             mesos_offer.accept(tasks, option)
             return True
@@ -473,7 +492,7 @@ class MesosExecutor(BaseExecutor):
         framework_role = conf.get("mesos", "FRAMEWORK_ROLE", fallback="airflow")
 
         task_cpu = conf.getfloat("mesos", "TASK_CPU", fallback=0.1)
-        task_memory = conf.getint("mesos", "TASK_MEMORY", fallback=256)
+        task_memory = conf.getfloat("mesos", "TASK_MEMORY", fallback=256.0)
         framework_failover_timeout = conf.getint("mesos", "FAILOVER_TIMEOUT", fallback=604800)
 
         if conf.getboolean("mesos", "CHECKPOINT", fallback=True):

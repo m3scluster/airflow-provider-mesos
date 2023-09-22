@@ -3,6 +3,7 @@
 ## master
 
 - Fix: wrong task id output in airflow logs.
+- Add: support for mesos attributes to run tasks only on mesos agents with these tag. 
 
 ## v0.2.1
 
