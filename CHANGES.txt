@@ -4,6 +4,7 @@
 
 - Fix: wrong task id output in airflow logs.
 - Add: support for mesos attributes to run tasks only on mesos agents with these tag. 
+- Change: increase mesos reconnection.
 
 ## v0.2.1
 
