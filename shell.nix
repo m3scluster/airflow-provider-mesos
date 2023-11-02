@@ -38,7 +38,7 @@ shellHook = ''
     cp docs/examples/airflow.cfg /home/$USER/airflow/
     cp docs/examples/dags/* /tmp/dags/
     cp docs/nixshell/lighttpd.conf /tmp/
-    airflow db init
+    airflow db migrate
     airflow users create --username admin --role Admin -e test@example.com -f admin -l admin --password admin
 
     # Webserver listen on 8881

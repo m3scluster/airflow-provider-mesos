@@ -106,7 +106,7 @@ class AirflowMesosScheduler(MesosClient):
         self.mesos_fetch_uri = conf.get("mesos", "MESOS_FETCH_URI", fallback="")
         self.mesos_fetch_uri_username = conf.get("mesos", "MESOS_FETCH_URI_USERNAME", fallback="root")
         self.mesos_attributes = conf.getboolean("mesos", "ATTRIBUTES", fallback=False)
-        self.core_sql_alchemy_conn = conf.get("core", "SQL_ALCHEMY_CONN")
+        self.database_sql_alchemy_conn = conf.get("database", "SQL_ALCHEMY_CONN")
         self.core_fernet_key = conf.get("core", "FERNET_KEY")
         self.logging_logging_level = conf.get("logging", "LOGGING_LEVEL")
         self.command_shell = str(
@@ -224,7 +224,7 @@ class AirflowMesosScheduler(MesosClient):
                     if attribute["name"] == "airflow":
                         attribute_airflow = attribute["text"]["value"]
 
-                if attribute_airflow == "false":
+                if attribute_airflow.lower() == "false":
                     self.log.info("Offered node is not valid for airflow jobs. %s (%s)", airflow_task_id, offer["id"]["value"])
                     self.task_queue.put((key, cmd, executor_config))
                     return False
@@ -279,8 +279,8 @@ class AirflowMesosScheduler(MesosClient):
                     "environment": {
                         "variables": [
                             {
-                                "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
-                                "value": self.core_sql_alchemy_conn,
+                                "name": "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
+                                "value": self.database_sql_alchemy_conn,
                             },
                             {
                                 "name": "AIRFLOW__CORE__FERNET_KEY",
