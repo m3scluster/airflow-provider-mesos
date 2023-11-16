@@ -401,30 +401,26 @@ class AirflowMesosScheduler(MesosClient):
 
         self.log.info("Task %s is in state %s", task_id, task_state)
 
-        if task_state == "TASK_STARTING":
-            return
-
         if task_state == "TASK_RUNNING":
             self.log.debug(task_id)
             self.tasks[task_id] = update
             return
         
-        key = self.task_key_map[task_id]
+        if task_id not in self.task_key_map:
+            return
 
-        if task_id in self.tasks:
-            del self.tasks[task_id]
-        
-        if task_id in self.task_key_map:
-            del self.task_key_map[task_id]
+        key = self.task_key_map[task_id]
 
         if task_state == "TASK_FINISHED":
             self.result_queue.put((key, State.SUCCESS))
             del self.task_restart[task_id]
+            self.cleanupQueues(task_id)
             return
 
         if task_state in ("TASK_KILLED", "TASK_FAILED"):
             self.result_queue.put((key, State.FAILED))
             del self.task_restart[task_id]
+            self.cleanupQueues(task_id)
             return
 
         if task_state in ("TASK_LOST"):
@@ -435,6 +431,8 @@ class AirflowMesosScheduler(MesosClient):
                 self.result_queue.put((key, State.FAILED))
                 del self.task_restart[task_id]
 
+            self.cleanupQueues(task_id)
+
 
     def get_task_info(self, task_id):
         """Return the container_info of the given task_id"""
@@ -442,6 +440,13 @@ class AirflowMesosScheduler(MesosClient):
             return self.tasks[task_id]
 
         return None
+    
+    def cleanupQueues(self, task_id):
+        if task_id in self.tasks:
+            del self.tasks[task_id]
+        
+        if task_id in self.task_key_map:
+            del self.task_key_map[task_id]
 
 
 class MesosExecutor(BaseExecutor):
