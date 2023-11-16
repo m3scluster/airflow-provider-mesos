@@ -82,6 +82,7 @@ class AirflowMesosScheduler(MesosClient):
         self.task_disk = task_disk
         self.task_counter = 0
         self.task_key_map: Dict[str, str] = {}
+        self.task_restart: Dict[str, str] = {}
         self.log = executor.log
         self.client = executor.client
         self.executor = executor
@@ -184,7 +185,6 @@ class AirflowMesosScheduler(MesosClient):
             tid = self.task_counter
             self.task_counter += 1
 
-
             if executor_config:
                 try:
                     self.log.info("Executor Config: %s", executor_config)
@@ -244,7 +244,7 @@ class AirflowMesosScheduler(MesosClient):
                 return False
 
             self.task_key_map[airflow_task_id] = key
-
+            self.task_restart[airflow_task_id] = 0
 
             if hasattr(key, 'execution_date'):
                 name = key.dag_id + "_" + key.task_id + "_" + str(key.execution_date.date()) + ":" + str(key.execution_date.time())
@@ -399,26 +399,42 @@ class AirflowMesosScheduler(MesosClient):
         task_id = update["status"]["task_id"]["value"]
         task_state = update["status"]["state"]
 
+        self.log.info("Task %s is in state %s", task_id, task_state)
+
+        if task_state == "TASK_STARTING":
+            return
+
         if task_state == "TASK_RUNNING":
             self.log.debug(task_id)
             self.tasks[task_id] = update
-
-        self.log.info("Task %s is in state %s", task_id, task_state)
-
+            return
+        
         key = self.task_key_map[task_id]
+
+        if task_id in self.tasks:
+            del self.tasks[task_id]
+        
+        if task_id in self.task_key_map:
+            del self.task_key_map[task_id]
 
         if task_state == "TASK_FINISHED":
             self.result_queue.put((key, State.SUCCESS))
-            self.tasks[task_id] = None
+            del self.task_restart[task_id]
             return
 
         if task_state in ("TASK_KILLED", "TASK_FAILED"):
             self.result_queue.put((key, State.FAILED))
-            self.tasks[task_id] = None
+            del self.task_restart[task_id]
+            return
 
         if task_state in ("TASK_LOST"):
-            self.result_queue.put((key, State.RESTARTING))
-            self.tasks[task_id] = None
+            if self.task_restart[task_id] <= 3:
+                self.result_queue.put((key, State.RESTARTING))
+                self.task_restart[task_id] += 1
+            else:
+                self.result_queue.put((key, State.FAILED))
+                del self.task_restart[task_id]
+
 
     def get_task_info(self, task_id):
         """Return the container_info of the given task_id"""
