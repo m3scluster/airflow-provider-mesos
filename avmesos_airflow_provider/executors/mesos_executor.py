@@ -659,11 +659,15 @@ class MesosExecutor(BaseExecutor):
     ########## API ##########
 
     @auth.verify_password
-    def verify_api_password(self, username, password):
+    def verify_api_password(username, password):
         api_username = conf.get("mesos", "API_USERNAME", fallback="user")
         api_password = generate_password_hash(conf.get("mesos", "API_PASSWORD", fallback="password"))
-        if check_password_hash(api_password, password) and username == api_username:
-            return username        
+
+        if username == api_username and check_password_hash(api_password, password):
+           return username 
+        
+        return None
+
 
     def api_queue_command_error(self, message):
         """Error message handling for queue_command"""
