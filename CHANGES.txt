@@ -4,6 +4,7 @@
 
 - Update: Mesos Attribute handling.
 - Update: Airflow configuration parameter to the new version.
+- Change: Set airflow task to state restarting if the Mesos state is in "TASK_LOST".
 
 ## v0.2.2
 

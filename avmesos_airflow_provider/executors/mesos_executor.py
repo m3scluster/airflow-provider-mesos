@@ -412,8 +412,12 @@ class AirflowMesosScheduler(MesosClient):
             self.tasks[task_id] = None
             return
 
-        if task_state in ("TASK_LOST", "TASK_KILLED", "TASK_FAILED"):
+        if task_state in ("TASK_KILLED", "TASK_FAILED"):
             self.result_queue.put((key, State.FAILED))
+            self.tasks[task_id] = None
+
+        if task_state in ("TASK_LOST"):
+            self.result_queue.put((key, State.RESTARTING))
             self.tasks[task_id] = None
 
     def get_task_info(self, task_id):
