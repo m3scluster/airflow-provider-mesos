@@ -192,7 +192,7 @@ class AirflowMesosScheduler(MesosClient):
                     self.task_mem = self.convert_memory_to_float(executor_config.get("mem_limit", mem))
                     self.task_disk = executor_config.get("disk", disk)
                     image = executor_config.get("image", self.mesos_slave_docker_image)
-                    force_pull = str(executor_config.get("force_pull", "true")).lower()
+                    force_pull = str(executor_config.get("force_pull", "true"))
                     container_type = executor_config.get("container_type", "DOCKER")
                     airflow_task_id = executor_config.get("airflow_task_id", None)
                 except Exception as e:
@@ -220,11 +220,16 @@ class AirflowMesosScheduler(MesosClient):
             executor_config["airflow_task_id"] = airflow_task_id
 
             if self.mesos_attributes:
-                for attribute in offer["attributes"]:
-                    if attribute["name"] == "airflow":
-                        attribute_airflow = attribute["text"]["value"]
+                if "attributes" in offer:
+                    for attribute in offer["attributes"]:
+                        if attribute["name"] == "airflow":
+                            attribute_airflow = attribute["text"]["value"]
 
-                if attribute_airflow.lower() == "false":
+                    if attribute_airflow.lower() == "false":
+                        self.log.info("Offered node is not valid for airflow jobs. %s (%s)", airflow_task_id, offer["id"]["value"])
+                        self.task_queue.put((key, cmd, executor_config))
+                        return False
+                else:
                     self.log.info("Offered node is not valid for airflow jobs. %s (%s)", airflow_task_id, offer["id"]["value"])
                     self.task_queue.put((key, cmd, executor_config))
                     return False
@@ -425,7 +430,7 @@ class AirflowMesosScheduler(MesosClient):
 
         if task_state in ("TASK_LOST"):
             if self.task_restart[task_id] <= 3:
-                self.result_queue.put((key, State.RESTARTING))
+                self.result_queue.put((key, State.NONE))
                 self.task_restart[task_id] += 1
             else:
                 self.result_queue.put((key, State.FAILED))

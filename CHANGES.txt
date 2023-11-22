@@ -1,10 +1,14 @@
 ## Changelog
 
-## master
+## v0.2.4
+
+- FIX: Attibutes handling.
+
+## v0.2.3
 
 - Update: Mesos Attribute handling.
 - Update: Airflow configuration parameter to the new version.
-- Change: Set airflow task to state restarting if the Mesos state is in "TASK_LOST".
+- Change: Set airflow task to state None if the Mesos state is in "TASK_LOST".
 
 ## v0.2.2
 
