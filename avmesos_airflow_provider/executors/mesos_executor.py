@@ -88,6 +88,7 @@ class AirflowMesosScheduler(MesosClient):
         self.executor = executor
         self.driver = None
         self.tasks: Dict[str, str] = {}
+        self.suppress = False
 
         if not conf.get("mesos", "DOCKER_IMAGE_SLAVE"):
             self.log.error("Expecting docker image for  mesos executor")
@@ -122,11 +123,15 @@ class AirflowMesosScheduler(MesosClient):
 
         self.log.info("Heartbeat")
         if self.task_queue.empty():
-            self.log.info("Suppress Mesos Framework")
-            self.driver.suppress()
+            if not self.suppress:
+                self.log.info("Suppress Mesos Framework")
+                self.driver.suppress()
+                self.suppress = True
         else:
-            self.log.info("Revive Mesos Framework")
-            self.driver.revive()
+            if self.suppress:
+                self.log.info("Revive Mesos Framework")
+                self.driver.revive()
+                self.suppress = False
        
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
@@ -192,7 +197,6 @@ class AirflowMesosScheduler(MesosClient):
                     self.task_mem = self.convert_memory_to_float(executor_config.get("mem_limit", mem))
                     self.task_disk = executor_config.get("disk", disk)
                     image = executor_config.get("image", self.mesos_slave_docker_image)
-                    force_pull = str(executor_config.get("force_pull", "true"))
                     container_type = executor_config.get("container_type", "DOCKER")
                     airflow_task_id = executor_config.get("airflow_task_id", None)
                 except Exception as e:
@@ -288,6 +292,10 @@ class AirflowMesosScheduler(MesosClient):
                                 "value": self.database_sql_alchemy_conn,
                             },
                             {
+                                "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
+                                "value": self.database_sql_alchemy_conn,
+                            },
+                            {
                                 "name": "AIRFLOW__CORE__FERNET_KEY",
                                 "value": self.core_fernet_key,
                             },
@@ -332,7 +340,7 @@ class AirflowMesosScheduler(MesosClient):
                     "docker": {
                         "image": image,
                         "network": self.mesos_docker_network_mode.upper(),
-                        "force_pull_image": force_pull,
+                        "force_pull_image": "true",
                         "privileged": "true",
                         "parameters": [
                             {
