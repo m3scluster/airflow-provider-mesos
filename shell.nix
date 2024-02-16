@@ -12,15 +12,17 @@ buildInputs = [
 ];
 
 SOURCE_DATE_EPOCH = 315532800;
-PROJDIR = "${toString ./.}";
+PROJDIR = "/tmp/python-dev";
 
 shellHook = ''
     echo "Using ${python310.name}"
     export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib"
     
-    [ ! -d '$PROJDIR/python-dev' ] && virtualenv python-dev && echo "SETUP python-dev: DONE"
-    source python-dev/bin/activate
-    pip install 'apache-airflow==2.7.1' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.7.1/constraints-3.10.txt"
+    [ ! -d '$PROJDIR' ] && virtualenv $PROJDIR && echo "SETUP python-dev: DONE"
+    source $PROJDIR/bin/activate
+    export LC_ALL=C
+
+    pip install 'apache-airflow==2.8.1' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.8.1/constraints-3.10.txt"
     pip install apache-airflow-providers-docker
     pip install avmesos psycopg2 waitress
     make install-dev

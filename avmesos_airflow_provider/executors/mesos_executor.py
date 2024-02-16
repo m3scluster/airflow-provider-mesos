@@ -23,6 +23,7 @@ from queue import Queue
 from typing import Any, Dict, Optional, List
 from threading import Thread
 
+import time
 import threading
 import json
 import urllib3
@@ -115,13 +116,24 @@ class AirflowMesosScheduler(MesosClient):
             conf.get("mesos", "COMMAND_SHELL", fallback=True)
         ).lower()
 
+        heartbeat_thread = threading.Thread(target=self.heartbeat_loop)
+        heartbeat_thread.daemon = True
+        heartbeat_thread.start()        
+
+
+    def heartbeat_loop(self):
+        while True:
+            self.log.debug("Heartbeat Loop")
+            time.sleep(60)
+
+
     def resource_heartbeat(self, heartbeat):
         """If we got a heartbeat, run checks"""
 
         """Set prometheus metric"""
         AIRFLOW_MESOS_QUEUE_GAUGE.set(self.task_queue.qsize())
 
-        self.log.info("Heartbeat")
+        self.log.debug("Heartbeat")
         if self.task_queue.empty():
             if not self.suppress:
                 self.log.info("Suppress Mesos Framework")
@@ -173,7 +185,6 @@ class AirflowMesosScheduler(MesosClient):
         offer_cpus = 0.1
         offer_mem = 256.0
         offer_disk = 1000.0
-        force_pull = "true"
         container_type = "DOCKER"
         cpu = self.task_cpu
         mem = self.task_mem
@@ -261,6 +272,7 @@ class AirflowMesosScheduler(MesosClient):
                 name = key.dag_id + "_" + key.task_id
 
             self.log.info("Launching task %s using offer %s", airflow_task_id, offer["id"]["value"])
+            self.result_queue.put((key, State.QUEUED))            
 
             task = {
                 "name": name,
@@ -414,15 +426,17 @@ class AirflowMesosScheduler(MesosClient):
 
         self.log.info("Task %s is in state %s", task_id, task_state)
 
-        if task_state == "TASK_RUNNING":
-            self.log.debug(task_id)
-            self.tasks[task_id] = update
-            return
-        
         if task_id not in self.task_key_map:
+            self.log.info("Task %s is in not int key map", task_id)
             return
 
         key = self.task_key_map[task_id]
+
+        if task_state == "TASK_RUNNING":
+            self.log.info("Task Running: %s", task_id)
+            self.result_queue.put((key, State.RUNNING))
+            self.tasks[task_id] = update
+            return
 
         if task_state == "TASK_FINISHED":
             self.result_queue.put((key, State.SUCCESS))

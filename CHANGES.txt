@@ -1,5 +1,9 @@
 ## Changelog
 
+## v0.2.6
+
+- Bugfix: API Authentication
+
 ## v0.2.5
 
 - Change: Optimise framework suppress.
