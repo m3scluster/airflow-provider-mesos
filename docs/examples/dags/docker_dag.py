@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
+import os
+
 from airflow.models.dag import DAG
 from datetime import datetime, timedelta
+from airflow.operators.bash import BashOperator
 from airflow.providers.docker.operators.docker import DockerOperator
+
+ENV_ID = os.environ.get("SYSTEM_TESTS_ENV_ID")
 
 default_args = {
         'owner'                 : 'airflow',
@@ -15,31 +22,16 @@ default_args = {
 
 with DAG('docker_operator', default_args=default_args, schedule=None, start_date=datetime.now(), tags=["example"]) as dag:
         t1 = DockerOperator(
-                task_id='docker_command1',
-                image='alpine:latest',
-                api_version='auto',
-                command="/bin/sleep 600",
-                docker_url='unix:///var/run/docker.sock',
-                retries=0,
-                executor_config={
-                   "cpus": 1,
-                   "mem_limit": "2g"
-                },
-                cpus=1,
-                mem_limit='64g'
+            docker_url="unix://var/run/docker.sock",  # Set your docker URL
+            command="/bin/sleep 30",
+            image="centos:latest",
+            network_mode="bridge",
+            task_id="docker_op_tester",
+            executor_config={
+                "cpus": 1.0,
+                "mem_limit": "200m"
+            },
+            dag=dag,
         )
+        t1
 
-        t2 = DockerOperator(
-                task_id='docker_command2',
-                image='alpine:latest',
-                api_version='auto',
-                command="/bin/sleep 600",
-                docker_url='unix:///var/run/docker.sock',
-                retries=0,
-                executor_config={
-                   "cpus": 1,
-                   "mem_limit": "2g"
-                }         
-        )
-
-        t1 >> t2
