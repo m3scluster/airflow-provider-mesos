@@ -172,7 +172,7 @@ class AirflowMesosScheduler(MesosClient):
             memory_val = float(memory_str[:-1])
             memory_val *= 1024  # Convert from GB to MB
         elif memory_str.endswith('m'):
-            memory_val = float(memory_str[:-2])
+            memory_val = float(memory_str[:-1])
 
         return memory_val        
 
@@ -187,7 +187,6 @@ class AirflowMesosScheduler(MesosClient):
         offer_disk = 1000.0
         container_type = "DOCKER"
         cpu = self.task_cpu
-        mem = self.task_mem
         disk = self.task_disk
         image = self.mesos_slave_docker_image
         airflow_task_id = None
@@ -205,7 +204,7 @@ class AirflowMesosScheduler(MesosClient):
                 try:
                     self.log.info("Executor Config: %s", executor_config)
                     self.task_cpu = executor_config.get("cpus", cpu)
-                    self.task_mem = self.convert_memory_to_float(executor_config.get("mem_limit", mem))
+                    self.task_mem = self.convert_memory_to_float(executor_config.get("mem_limit", "256m"))
                     self.task_disk = executor_config.get("disk", disk)
                     image = executor_config.get("image", self.mesos_slave_docker_image)
                     container_type = executor_config.get("container_type", "DOCKER")
@@ -658,8 +657,8 @@ class MesosExecutor(BaseExecutor):
         self,
         key: TaskInstanceKey,
         command: CommandType,
-        queue: Optional[str] = None,
-        executor_config: Optional[Any] = None,
+        queue: str | None = None,
+        executor_config: Any | None = None,            
     ):
         """Execute Tasks"""
         self.log.info(

@@ -14,20 +14,15 @@ default_args = {
 }
 
 with DAG('python_operator', default_args=default_args, schedule=None, start_date=datetime.now(), tags=["example"]) as dag:
-
-        def my_function(x):
-                i = 0
-                while i <= 1000000000:
-                        print("This is a Python function.")
-                        i = i+1
+        def my_function():
+                print("This is a Python function.")
 
 
-        t1 = PythonOperator(
+        t3 = PythonOperator(
                 task_id='python_command1',
                 python_callable=my_function,
-                retries=0,                
                 dag=dag
         )
 
-        t1
+        t3
 
