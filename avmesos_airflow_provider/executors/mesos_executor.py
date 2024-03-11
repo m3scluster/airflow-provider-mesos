@@ -112,6 +112,7 @@ class AirflowMesosScheduler(MesosClient):
         self.database_sql_alchemy_conn = conf.get("database", "SQL_ALCHEMY_CONN")
         self.core_fernet_key = conf.get("core", "FERNET_KEY")
         self.logging_logging_level = conf.get("logging", "LOGGING_LEVEL")
+        self.logging_log_filename_template = conf.get("logging", "LOG_FILENAME_TEMPLATE")
         self.command_shell = str(
             conf.get("mesos", "COMMAND_SHELL", fallback=True)
         ).lower()
@@ -317,6 +318,10 @@ class AirflowMesosScheduler(MesosClient):
                             {
                                 "name": "AIRFLOW__LOGGING__LOGGING_LEVEL",
                                 "value": self.logging_logging_level,
+                            },
+                            {
+                                "name": "AIRFLOW__LOGGING__LOG_FILENAME_TEMPLATE",
+                                "value": self.logging_log_filename_template,
                             },
                         ]
                     },
