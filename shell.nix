@@ -22,7 +22,7 @@ shellHook = ''
     source $PROJDIR/bin/activate
     export LC_ALL=C
 
-    pip install 'apache-airflow==2.8.1' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.8.1/constraints-3.10.txt"
+    pip install 'apache-airflow==2.8.3' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.8.3/constraints-3.10.txt"
     pip install apache-airflow-providers-docker
     pip install avmesos psycopg2 waitress
     make install-dev

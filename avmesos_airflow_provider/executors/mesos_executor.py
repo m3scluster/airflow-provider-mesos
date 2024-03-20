@@ -276,7 +276,7 @@ class AirflowMesosScheduler(MesosClient):
 
             task = {
                 "name": name,
-                "task_id": {"value": airflow_task_id},
+                "task_id": {"value": airflow_task_id },
                 "agent_id": {"value": offer["agent_id"]["value"]},
                 "resources": [
                     {
