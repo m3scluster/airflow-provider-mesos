@@ -28,7 +28,7 @@ import threading
 import json
 import urllib3
 import ast
-import prometheus_client as prom 
+import prometheus_client as prom
 
 from avmesos.client import MesosClient
 from airflow.configuration import conf
@@ -119,7 +119,7 @@ class AirflowMesosScheduler(MesosClient):
 
         heartbeat_thread = threading.Thread(target=self.heartbeat_loop)
         heartbeat_thread.daemon = True
-        heartbeat_thread.start()        
+        heartbeat_thread.start()
 
 
     def heartbeat_loop(self):
@@ -145,7 +145,7 @@ class AirflowMesosScheduler(MesosClient):
                 self.log.info("Revive Mesos Framework")
                 self.driver.revive()
                 self.suppress = False
-       
+
     def resource_offers(self, offers):
         """If we got a offer, run a queued task"""
         offer_options = {
@@ -175,7 +175,7 @@ class AirflowMesosScheduler(MesosClient):
         elif memory_str.endswith('m'):
             memory_val = float(memory_str[:-1])
 
-        return memory_val        
+        return memory_val
 
     # pylint: disable=too-many-branches
     def run_job(self, mesos_offer):
@@ -200,6 +200,8 @@ class AirflowMesosScheduler(MesosClient):
             key, cmd, executor_config = self.task_queue.get()
             tid = self.task_counter
             self.task_counter += 1
+
+            old_executor_config = executor_config
 
             if executor_config:
                 try:
@@ -229,10 +231,15 @@ class AirflowMesosScheduler(MesosClient):
                 elif resource["name"] == "disk":
                     offer_disk = resource["scalar"]["value"]
 
-            self.log.debug("Received offer %s with cpus: %f and mem: %f and disk: %f for task %s", offer["id"]["value"], offer_cpus, offer_mem, offer_disk, airflow_task_id)
-
             # set the airflow_task_id as executor config
             executor_config["airflow_task_id"] = airflow_task_id
+
+            if hasattr(key, 'execution_date'):
+                name = key.dag_id + "_" + key.task_id + "_" + str(key.execution_date.date()) + ":" + str(key.execution_date.time())
+            else:
+                name = key.dag_id + "_" + key.task_id
+
+            self.log.info("Received offer %s with cpus: %f and mem: %f and disk: %f for task %s (%s)", offer["id"]["value"], offer_cpus, offer_mem, offer_disk, airflow_task_id, name)
 
             if self.mesos_attributes:
                 if "attributes" in offer:
@@ -242,37 +249,37 @@ class AirflowMesosScheduler(MesosClient):
 
                     if attribute_airflow.lower() == "false":
                         self.log.info("Offered node is not valid for airflow jobs. %s (%s)", airflow_task_id, offer["id"]["value"])
-                        self.task_queue.put((key, cmd, executor_config))
+                        self.log.debug("return false > name: %s", name)
+                        self.task_queue.put((key, cmd, old_executor_config))
                         return False
                 else:
                     self.log.info("Offered node is not valid for airflow jobs. %s (%s)", airflow_task_id, offer["id"]["value"])
-                    self.task_queue.put((key, cmd, executor_config))
+                    self.log.debug("return false > name: %s", name)
+                    self.task_queue.put((key, cmd, old_executor_config))
                     return False
 
             # if the resources does not match, add the task again
             if float(offer_cpus) < float(self.task_cpu):
                 self.log.info("Offered CPU's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, offer_cpus, self.task_cpu, offer["id"]["value"])
-                self.task_queue.put((key, cmd, executor_config))
+                self.log.debug("return false > name: %s", name)
+                self.task_queue.put((key, cmd, old_executor_config))
                 return False
             if float(offer_mem) < float(self.task_mem):
                 self.log.info("Offered MEM's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, offer_mem, self.task_mem, offer["id"]["value"])
-                self.task_queue.put((key, cmd, executor_config))
+                self.log.debug("return false > name: %s", name)
+                self.task_queue.put((key, cmd, old_executor_config))
                 return False
             if float(offer_disk) < float(self.task_disk):
                 self.log.info("Offered DISK's for task %s are not enough: got: %f need: %f - %s", airflow_task_id, offer_disk, self.task_disk, offer["id"]["value"])
-                self.task_queue.put((key, cmd, executor_config))
+                self.log.debug("return false > name: %s", name)
+                self.task_queue.put((key, cmd, old_executor_config))
                 return False
 
             self.task_key_map[airflow_task_id] = key
             self.task_restart[airflow_task_id] = 0
 
-            if hasattr(key, 'execution_date'):
-                name = key.dag_id + "_" + key.task_id + "_" + str(key.execution_date.date()) + ":" + str(key.execution_date.time())
-            else:
-                name = key.dag_id + "_" + key.task_id
-
             self.log.info("Launching task %s using offer %s", airflow_task_id, offer["id"]["value"])
-            self.result_queue.put((key, State.QUEUED))            
+            self.result_queue.put((key, State.QUEUED))
 
             task = {
                 "name": name,
@@ -385,7 +392,7 @@ class AirflowMesosScheduler(MesosClient):
                     "executable": False,
                     "cache": False,
                     "outputfile": dag_file,
-                }] 
+                }]
                 task["command"]["user"] = self.mesos_fetch_uri_username
 
             # concat custom docker environment variables if they are configured
@@ -409,20 +416,20 @@ class AirflowMesosScheduler(MesosClient):
             option = {"Filters": {"RefuseSeconds": "0.5"}}
 
             tasks.append(task)
-        if len(tasks) > 0:            
+        if len(tasks) > 0:
             mesos_offer.accept(tasks, option)
             return True
         else:
             mesos_offer.decline()
             return False
-        
+
     def subscribed(self, driver):
         """
         Subscribe to Mesos Master
 
         """
         self.driver = driver
-        
+
     def status_update(self, update):
         """Update the Status of the Tasks. Based by Mesos Events."""
         task_id = update["status"]["task_id"]["value"]
@@ -442,13 +449,7 @@ class AirflowMesosScheduler(MesosClient):
             self.tasks[task_id] = update
             return
 
-        if task_state == "TASK_FINISHED":
-            self.result_queue.put((key, State.SUCCESS))
-            del self.task_restart[task_id]
-            self.cleanupQueues(task_id)
-            return
-
-        if task_state in ("TASK_KILLED", "TASK_FAILED"):
+        if task_state in ("TASK_KILLED", "TASK_FAILED", "TASK_ERROR"):
             self.result_queue.put((key, State.FAILED))
             del self.task_restart[task_id]
             self.cleanupQueues(task_id)
@@ -471,11 +472,12 @@ class AirflowMesosScheduler(MesosClient):
             return self.tasks[task_id]
 
         return None
-    
+
     def cleanupQueues(self, task_id):
+        self.log.debug("cleanup task: %s", task_id)
         if task_id in self.tasks:
             del self.tasks[task_id]
-        
+
         if task_id in self.task_key_map:
             del self.task_key_map[task_id]
 
@@ -594,11 +596,11 @@ class MesosExecutor(BaseExecutor):
         driver = AirflowMesosScheduler(self, self.task_queue, self.result_queue, task_cpu, task_memory)
         self.driver = driver
         self.client.max_reconnect = 100
-        self.client.on(MesosClient.SUBSCRIBED, driver.subscribed)        
+        self.client.on(MesosClient.SUBSCRIBED, driver.subscribed)
         self.client.on(MesosClient.UPDATE, driver.status_update)
         self.client.on(MesosClient.OFFERS, driver.resource_offers)
         self.client.on(MesosClient.HEARTBEAT, driver.resource_heartbeat)
-        
+
 
         self.mesos_framework = MesosExecutor.MesosFramework(self.client)
         self.mesos_framework.start()
@@ -633,7 +635,7 @@ class MesosExecutor(BaseExecutor):
 
 
         Thread(target=serve, args=[app], daemon=True, kwargs={"port": "11000"}).start()
-        prom.start_http_server(8100) 
+        prom.start_http_server(8100)
 
 
 
@@ -663,7 +665,7 @@ class MesosExecutor(BaseExecutor):
         key: TaskInstanceKey,
         command: CommandType,
         queue: str | None = None,
-        executor_config: Any | None = None,            
+        executor_config: Any | None = None,
     ):
         """Execute Tasks"""
         self.log.info(
@@ -700,8 +702,8 @@ class MesosExecutor(BaseExecutor):
         api_password = generate_password_hash(conf.get("mesos", "API_PASSWORD", fallback="password"))
 
         if username == api_username and check_password_hash(api_password, password):
-           return username 
-        
+           return username
+
         return None
 
 
@@ -768,9 +770,9 @@ class MesosExecutor(BaseExecutor):
     def list_to_json(self, liste):
         ret = []
         for i in liste:
-            ## (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command1', run_id='manual__2022-07-29T15:32:54.865408+00:00', try_number=1), 
+            ## (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command1', run_id='manual__2022-07-29T15:32:54.865408+00:00', try_number=1),
 
-            ## ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command1', 'manual__2022-07-29T15:32:54.865408+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 7.5, 'mem_limit': 32768}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command2', run_id='manual__2022-07-29T15:32:54.865408+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command2', 'manual__2022-07-29T15:32:54.865408+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 2.0, 'mem_limit': 2048}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command1', run_id='manual__2022-07-29T15:34:38.821409+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command1', 'manual__2022-07-29T15:34:38.821409+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 7.5, 'mem_limit': 32768}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command2', run_id='manual__2022-07-29T15:34:38.821409+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command2', 'manual__2022-07-29T15:34:38.821409+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], 
+            ## ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command1', 'manual__2022-07-29T15:32:54.865408+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 7.5, 'mem_limit': 32768}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command2', run_id='manual__2022-07-29T15:32:54.865408+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command2', 'manual__2022-07-29T15:32:54.865408+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 2.0, 'mem_limit': 2048}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command1', run_id='manual__2022-07-29T15:34:38.821409+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command1', 'manual__2022-07-29T15:34:38.821409+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'], {'cpus': 7.5, 'mem_limit': 32768}), (TaskInstanceKey(dag_id='docker_dag2', task_id='docker_command2', run_id='manual__2022-07-29T15:34:38.821409+00:00', try_number=1), ['airflow', 'tasks', 'run', 'docker_dag2', 'docker_command2', 'manual__2022-07-29T15:34:38.821409+00:00', '--local', '--subdir', 'DAGS_FOLDER/dag.py'],
             ## {'cpus': 2.0, 'mem_limit': 2048})]
             tmp = dict()
             tmp["dag_id"] = i[0][0]
