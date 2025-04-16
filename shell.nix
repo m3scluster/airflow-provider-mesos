@@ -7,9 +7,12 @@ buildInputs = [
     python311
     python311Packages.pip
     python311Packages.virtualenv
+    python311Packages.xmlsec
     postgresql
     lighttpd
     jq
+		libxml2
+		pkg-config
 ];
 
 SOURCE_DATE_EPOCH = 315532800;
@@ -17,7 +20,7 @@ PROJDIR = "/tmp/python-dev";
 S_NETWORK="host";
 
 shellHook = ''
-    echo "Using ${python310.name}"
+    echo "Using ${python311.name}"
     export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib"
 
     [ ! -d '$PROJDIR' ] && virtualenv $PROJDIR && echo "SETUP python-dev: DONE"
@@ -25,8 +28,9 @@ shellHook = ''
     export LC_ALL=C
 
     pip install 'apache-airflow==2.10.1' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.1/constraints-3.11.txt"
+		pip install boto3 avmesos psycopg2 waitress
     pip install apache-airflow-providers-docker
-    pip install avmesos psycopg2 waitress
+    pip install apache-airflow-providers-amazon
     make install-dev
 
     mkdir /tmp/airflow
