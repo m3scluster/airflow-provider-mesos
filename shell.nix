@@ -8,6 +8,7 @@ buildInputs = [
     python311Packages.pip
     python311Packages.virtualenv
     python311Packages.xmlsec
+		python311Packages.psycopg2
     postgresql
     lighttpd
     jq
@@ -28,7 +29,7 @@ shellHook = ''
     export LC_ALL=C
 
     pip install 'apache-airflow==2.10.1' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.1/constraints-3.11.txt"
-		pip install boto3 avmesos psycopg2 waitress
+		pip install boto3 avmesos waitress
     pip install apache-airflow-providers-docker
     pip install apache-airflow-providers-amazon
     make install-dev
@@ -52,7 +53,7 @@ shellHook = ''
     lighttpd -f /tmp/lighttpd.conf
     # airflow listen on 8880
     nohup airflow webserver 2>&1>/dev/null &
-    nohup airflow scheduler 2>&1>/dev/null &
+#    nohup airflow scheduler 2>&1>/dev/null &
 # airflow scheduler
     '';
 }
