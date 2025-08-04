@@ -178,6 +178,39 @@ class AirflowMesosScheduler(MesosClient):
 
         return memory_val
 
+    def check_mesos_attributes(self, mesos_attributes, offer):
+        # convert offer in Dictionary: {name: value}
+        offer_dict = {
+            attr["name"].lower(): attr["text"]["value"].lower()
+            for attr in offer
+            if "name" in attr and "text" in attr and "value" in attr["text"]
+        }
+
+        def match_condition(condition):
+            if ':' not in condition:
+                return False
+            key, value = condition.split(':', 1)
+            return offer_dict.get(key.lower()) == value.lower()
+
+        # 1. normal cases (without ?:)
+        normal_conditions = [a for a in mesos_attributes if '?:' not in a]
+        for attr in normal_conditions:
+            if not match_condition(attr):
+                return False
+
+        # 2. fallback cases (with ?:)
+        fallback_conditions = [a for a in mesos_attributes if '?:' in a]
+        for attr in fallback_conditions:
+            first, fallback = attr.split('?:', 1)
+
+            if first not in normal_conditions:
+                if match_condition(first):
+                    return False
+                if not match_condition(fallback):
+                    return False
+
+        return True
+
     # pylint: disable=too-many-branches
     def run_job(self, mesos_offer):
         """Start a queued Airflow task in Mesos"""
@@ -211,7 +244,13 @@ class AirflowMesosScheduler(MesosClient):
                     self.task_cpu = executor_config.get("cpus", cpu)
                     self.task_mem = self.convert_memory_to_float(executor_config.get("mem_limit", "256m"))
                     self.task_disk = executor_config.get("disk", disk)
-                    self.mesos_attributes = eval(executor_config.get("attributes", "[]")) + mesos_attributes
+
+                    self.mesos_attributes = executor_config.get("attributes")
+                    if len(self.mesos_attributes) > 0:
+                      self.mesos_attributes = self.mesos_attributes + mesos_attributes
+                    else:
+                      selr.mesos_attributes = mesos_attributes
+
                     image = executor_config.get("image", self.mesos_slave_docker_image)
                     container_type = executor_config.get("container_type", "DOCKER")
                     airflow_task_id = executor_config.get("airflow_task_id", None)
@@ -246,15 +285,10 @@ class AirflowMesosScheduler(MesosClient):
 
             if len(self.mesos_attributes) > 0:
                 if "attributes" in offer:
-                    for offer_attr in offer["attributes"]:
-                        for mesos_attr in self.mesos_attributes:
-                            mattr = mesos_attr.replace(" ", "").split(":")
-                            if offer_attr["name"].lower() == mattr[0].lower() and \
-                               offer_attr["text"]["value"].lower() != mattr[1].lower():
-                                self.log.info("Offered node is not valid for this mesos job. %s (%s)", airflow_task_id, offer["id"]["value"])
-                                self.log.debug("return false > name: %s", offer_attr["name"])
-                                self.task_queue.put((key, cmd, old_executor_config))
-                                return False
+                    if not self.check_mesos_attributes(self.mesos_attributes, offer["attributes"]):
+                        self.log.info("Offered node is not valid for this mesos job. %s (%s)", airflow_task_id, offer["id"]["value"])
+                        self.task_queue.put((key, cmd, old_executor_config))
+                        return False
 
                 else:
                     self.log.info("Offered node is not valid for airflow jobs. %s (%s)", airflow_task_id, offer["id"]["value"])

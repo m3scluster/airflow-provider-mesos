@@ -39,7 +39,7 @@ mesos_ssl = True
 master = leader.mesos:5050
 framework_name = Airflow
 checkpoint = True
-attributes = False
+mesos_attributes = ["airflow:true"]
 failover_timeout = 604800
 command_shell = True
 task_cpu = 1
@@ -87,12 +87,48 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
                 docker_url='unix:///var/run/docker.sock',
                 executor_config={
                                 "cpus": 2.0,
-                                "mem_limit": 2048
+                                "mem_limit": 2048,
+                                "attributes": ["gpu:true"]
                 }         
         )
 
         t2
 ```
+
+## Using Mesos attributes
+
+Within the airflow.cfg file, you can define default Mesos attributes that are
+applied to every task.
+
+As example:
+
+```bash
+mesos_attributes = ["airflow:true", "gpu:true?:cpu:true"]
+```
+
+When you add task-specific attributes within your DAG,...
+
+```bash
+executor_config={
+  "cpus": 2.0,
+  "mem_limit": 2048,
+  "attributes": ["gpu:true"]
+}
+```
+
+... they are combined with these default attributes. This allows you to both
+supplement and override the default settings.
+
+Specifically, what is the reasoning behind the convention used in the
+`gpu:true?:cpu:true` attribute string?
+
+The intention is that if a Mesos offer does include gpu=true, the task will
+automatically default to using a CPU-only server, preventing the Data Science
+team from needing to manually add attributes to each task. If a Data Science team
+need GPU, they only has to add that specific attribute.
+
+This is simply an illustrative example, and the GPU and CPU attributes can be
+any valid string value.
 
 ## Development
 

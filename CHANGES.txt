@@ -1,5 +1,9 @@
 ## Changelog
 
+## v0.3.0
+
+- Add: Support for Mesos attributes in airflow.cfg as well as in the DAG.
+
 ## v0.2.6
 
 - Bugfix: API Authentication
