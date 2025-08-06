@@ -245,11 +245,11 @@ class AirflowMesosScheduler(MesosClient):
                     self.task_mem = self.convert_memory_to_float(executor_config.get("mem_limit", "256m"))
                     self.task_disk = executor_config.get("disk", disk)
 
-                    self.mesos_attributes = executor_config.get("attributes")
+                    self.mesos_attributes = executor_config.get("attributes", [])
                     if len(self.mesos_attributes) > 0:
                       self.mesos_attributes = self.mesos_attributes + mesos_attributes
                     else:
-                      selr.mesos_attributes = mesos_attributes
+                      self.mesos_attributes = mesos_attributes
 
                     image = executor_config.get("image", self.mesos_slave_docker_image)
                     container_type = executor_config.get("container_type", "DOCKER")
