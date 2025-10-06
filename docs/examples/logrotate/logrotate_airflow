@@ -1,0 +1,9 @@
+compress
+
+/home/airflow/airflow/logs/*/*/*.log {
+  daily
+  notifempty
+  rotate 1
+  maxage 2
+  minage 1
+}
