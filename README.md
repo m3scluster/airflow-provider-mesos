@@ -16,7 +16,7 @@ To open an issue, please use this place: https://github.com/m3scluster/airflow-p
 
 ## Requirements
 
-- Airflow 2.x
+- Airflow 3.x
 - Apache Mesos minimum 1.6.x
 
 ## How to install and configure
@@ -39,7 +39,7 @@ mesos_ssl = True
 master = leader.mesos:5050
 framework_name = Airflow
 checkpoint = True
-mesos_attributes = ["airflow:true"]
+mesos_attributes = ["airflow:true", "gpu:true?:cpu:true"]
 failover_timeout = 604800
 command_shell = True
 task_cpu = 1
@@ -50,11 +50,12 @@ default_secret = <MESOS PASSWORD>
 docker_image_slave = <AIRFLOW DOCKER IMAGE>
 docker_volume_driver = local
 docker_volume_dag_name = airflowdags
-docker_volume_dag_container_path = /home/airflow/airflow/dags/
+docker_volume_dag_container_path = /airflow/airflow/dags/
 docker_sock = /var/run/docker.sock
 docker_volume_logs_name = airflowlogs
-docker_volume_logs_container_path = /home/airflow/airflow/logs/
-docker_environment = '[{ "name":"<KEY>", "value":"<VALUE>" }, { ... }]'
+docker_volume_logs_container_path = /airflow/airflow/
+docker_user_group_id = 998
+docker_environment = [{ "name":"<KEY>", "value":"<VALUE>" }, { ... }]
 api_username = <USERNAME FOR THIS API>
 api_password = <PASSWORD FOR THIS API>
 
