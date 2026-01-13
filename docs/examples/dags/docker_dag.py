@@ -29,7 +29,8 @@ with DAG('docker_operator', default_args=default_args, schedule=None, start_date
             task_id="docker_op_tester",
             executor_config={
                 "cpus": 1.0,
-                "mem_limit": "200m"
+                "mem_limit": "200m",
+                "attributes": ["gpu:true"],
             },
             dag=dag,
         )

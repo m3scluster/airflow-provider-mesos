@@ -4,11 +4,11 @@ stdenv.mkDerivation {
 name = "python-env";
 
 buildInputs = [
-		python311
-		python311Packages.pip
-		python311Packages.virtualenv
-		python311Packages.xmlsec
-		python311Packages.psycopg2
+		python312
+		python312Packages.pip
+		python312Packages.virtualenv
+		python312Packages.xmlsec
+		python312Packages.psycopg2
 		postgresql
 		lighttpd
 		jq
@@ -21,14 +21,14 @@ PROJDIR = "/tmp/python-dev";
 S_NETWORK="host";
 
 shellHook = ''
-		echo "Using ${python311.name}"
+		echo "Using ${python312.name}"
 		export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib"
 
 		[ ! -d '$PROJDIR' ] && virtualenv $PROJDIR && echo "SETUP python-dev: DONE"
 		source $PROJDIR/bin/activate
 		export LC_ALL=C
 
-		pip install 'apache-airflow==2.10.1' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.1/constraints-3.11.txt"
+		pip install 'apache-airflow==2.10.1' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.1/constraints-3.12.txt"
 		pip install boto3 avmesos waitress
 		pip install apache-airflow-providers-docker
 		pip install apache-airflow-providers-amazon
