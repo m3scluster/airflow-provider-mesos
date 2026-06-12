@@ -9,26 +9,31 @@ buildInputs = [
 		python312Packages.virtualenv
 		python312Packages.xmlsec
 		python312Packages.psycopg2
+		python312Packages.python-lsp-server
 		postgresql
 		lighttpd
 		jq
 		libxml2
 		pkg-config
+		kdePackages.kate
 ];
 
 SOURCE_DATE_EPOCH = 315532800;
 PROJDIR = "/tmp/python-dev";
-S_NETWORK="host";
+S_NETWORK = "weave";
+S_HOSTNAME = "airflow.weave.local";
+
 
 shellHook = ''
-		echo "Using ${python311.name}"
+		echo "Using ${python312.name}"
 		export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib"
+		export PATH=/home/$USER/bin:$PATH
 
 		[ ! -d '$PROJDIR' ] && virtualenv $PROJDIR && echo "SETUP python-dev: DONE"
 		source $PROJDIR/bin/activate
 		export LC_ALL=C
 
-		pip install 'apache-airflow==3.1.0' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.1.0/constraints-3.12.txt"
+		pip install 'apache-airflow==3.2.2' --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.2.2/constraints-3.12.txt"
 		pip install boto3 avmesos waitress asyncpg
 		pip install apache-airflow-providers-docker
 		pip install apache-airflow-providers-amazon
@@ -56,6 +61,5 @@ shellHook = ''
 		nohup airflow dag-processor 2>&1>/dev/null &
 		sleep 10
     cat /home/$USER/airflow/simple_auth_manager_passwords.json.generated
-#    nohup airflow scheduler 2>&1>/dev/null &
 		'';
 }
