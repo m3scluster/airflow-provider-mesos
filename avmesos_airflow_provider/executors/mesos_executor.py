@@ -189,7 +189,9 @@ class AirflowMesosScheduler(MesosClient):
     def check_mesos_attributes(self, mesos_attributes, offer):
         # convert offer in Dictionary: {name: value}
         offer_dict = {
-            attr["name"].lower(): attr["text"]["value"].lower()
+            attr["name"].strip().lower():
+
+            attr["text"]["value"].replace(" ", "").strip('"').lower()
             for attr in offer
             if "name" in attr and "text" in attr and "value" in attr["text"]
         }
