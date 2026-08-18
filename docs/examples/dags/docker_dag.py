@@ -7,7 +7,7 @@ import os
 
 from airflow.models.dag import DAG
 from datetime import datetime, timedelta
-from airflow.operators.bash import BashOperator
+from airflow.providers.standard.operators.bash.BashOperator import BashOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 
 ENV_ID = os.environ.get("SYSTEM_TESTS_ENV_ID")
