@@ -1,4 +1,4 @@
-# Provider for Apache Airflow 2.x to schedule Apache Mesos
+# Provider for Apache Airflow schedule Apache Mesos
 
 [![Docs](https://img.shields.io/static/v1?label=&message=Issues&color=brightgreen)](https://github.com/m3scluster/airflow-provider-mesos/issues)
 [![Chat](https://img.shields.io/static/v1?label=&message=Chat&color=brightgreen)](https://matrix.to/#/#mesos:matrix.aventer.biz?via=matrix.aventer.biz)
