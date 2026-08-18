@@ -5,13 +5,13 @@
 .PHONY: help build bootstrap all
 
 help:
-	    @echo "Makefile arguments:"
-	    @echo ""
-	    @echo "Makefile commands:"
-	    @echo "build"
-	    @echo "all"
-			@echo "publish"
-			@echo ${TAG}
+	@echo "Makefile arguments:"
+	@echo ""
+	@echo "Makefile commands:"
+	@echo "build"
+	@echo "all"
+	@echo "publish"
+	@echo ${TAG}
 
 .DEFAULT_GOAL := all
 
@@ -33,5 +33,8 @@ install-dev:
 docs:
 	@echo ">>>> Build docs"
 	$(MAKE) -C $@
+
+schedule:
+	@nohup airflow scheduler 2>&1>/dev/null &
 
 all: build
