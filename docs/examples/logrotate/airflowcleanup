@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cd /home/airflow/airflow/logs 
+su - airflow -c 'find /home/airflow/airflow/logs -mindepth 1 -mtime +1 -type d > /tmp/test.del'
+su - airflow -c 'find /home/airflow/airflow/logs -mindepth 1 -mtime +1 -type d -exec rm -rf {} \;'
+

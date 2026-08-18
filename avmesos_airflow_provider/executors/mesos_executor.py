@@ -30,6 +30,8 @@ import urllib3
 import ast
 import prometheus_client as prom
 
+from airflow.executors import workloads
+from collections.abc import Sequence
 from avmesos.client import MesosClient
 from airflow.configuration import conf
 from airflow.exceptions import AirflowException
@@ -105,6 +107,7 @@ class AirflowMesosScheduler(MesosClient):
         self.mesos_docker_volume_dag_container_path = conf.get("mesos", "DOCKER_VOLUME_DAG_CONTAINER_PATH")
         self.mesos_docker_volume_logs_name = conf.get("mesos", "DOCKER_VOLUME_LOGS_NAME")
         self.mesos_docker_volume_logs_container_path = conf.get("mesos", "DOCKER_VOLUME_LOGS_CONTAINER_PATH")
+        self.mesos_docker_user_group_id = conf.get("mesos", "DOCKER_USER_GROUP_ID")
         self.mesos_docker_sock = conf.get("mesos", "DOCKER_SOCK")
         self.mesos_fetch_uri = conf.get("mesos", "MESOS_FETCH_URI", fallback="")
         self.mesos_fetch_uri_username = conf.get("mesos", "MESOS_FETCH_URI_USERNAME", fallback="root")
@@ -112,6 +115,11 @@ class AirflowMesosScheduler(MesosClient):
 
         self.database_sql_alchemy_conn = conf.get("database", "SQL_ALCHEMY_CONN")
         self.core_fernet_key = conf.get("core", "FERNET_KEY")
+        self.core_execution_api_server_url = conf.get("core", "EXECUTION_API_SERVER_URL")
+        self.api_auth_jwt_secret = conf.get("api_auth", "JWT_SECRET")
+        self.api_auth_jwt_algorithm = conf.get("api_auth", "JWT_ALGORITHM")
+        self.api_auth_jwt_audience = conf.get("api_auth", "JWT_AUDIENCE")
+        self.api_auth_jwt_expiration_time = conf.get("api_auth", "JWT_EXPIRATION_TIME")
         self.logging_logging_level = conf.get("logging", "LOGGING_LEVEL")
         self.logging_log_filename_template = conf.get("logging", "LOG_FILENAME_TEMPLATE")
         self.command_shell = str(
@@ -181,7 +189,9 @@ class AirflowMesosScheduler(MesosClient):
     def check_mesos_attributes(self, mesos_attributes, offer):
         # convert offer in Dictionary: {name: value}
         offer_dict = {
-            attr["name"].lower(): attr["text"]["value"].lower()
+            attr["name"].strip().lower():
+
+            attr["text"]["value"].replace(" ", "").strip('"').lower()
             for attr in offer
             if "name" in attr and "text" in attr and "value" in attr["text"]
         }
@@ -286,7 +296,7 @@ class AirflowMesosScheduler(MesosClient):
             if len(self.mesos_attributes) > 0:
                 if "attributes" in offer:
                     if not self.check_mesos_attributes(self.mesos_attributes, offer["attributes"]):
-                        self.log.info("Offered node is not valid for this mesos job. %s (%s)", airflow_task_id, offer["id"]["value"])
+                        self.log.info("Offered node is not valid for this mesos job. %s (%s) attribute %s", airflow_task_id, offer["id"]["value"], offer["attributes"])
                         self.task_queue.put((key, cmd, old_executor_config))
                         return False
 
@@ -361,12 +371,36 @@ class AirflowMesosScheduler(MesosClient):
                                 "value": "false",
                             },
                             {
+                                "name": "AIRFLOW__CORE__EXECUTION_API_SERVER_URL",
+                                "value": self.core_execution_api_server_url,
+                            },
+                            {
+                                "name": "AIRFLOW__API_AUTH__JWT_SECRET",
+                                "value": self.api_auth_jwt_secret,
+                            },
+                            {
+                                "name": "AIRFLOW__API_AUTH__JWT_ALGORITHM",
+                                "value": self.api_auth_jwt_algorithm,
+                            },
+                            {
+                                "name": "AIRFLOW__API_AUTH__JWT_AUDIENCE",
+                                "value": self.api_auth_jwt_audience,
+                            },
+                            {
+                                "name": "AIRFLOW__API_AUTH__JWT_EXPIRATION_TIME",
+                                "value": self.api_auth_jwt_expiration_time,
+                            },
+                            {
                                 "name": "AIRFLOW__LOGGING__LOGGING_LEVEL",
                                 "value": self.logging_logging_level,
                             },
                             {
                                 "name": "AIRFLOW__LOGGING__LOG_FILENAME_TEMPLATE",
                                 "value": self.logging_log_filename_template,
+                            },
+                            {
+                                "name": "AIRFLOW__LOGGING__BASE_LOG_FOLDER",
+                                "value": self.mesos_docker_volume_logs_container_path,
                             },
                         ]
                     },
@@ -408,13 +442,17 @@ class AirflowMesosScheduler(MesosClient):
                                 "key": "volume",
                                 "value": self.mesos_docker_sock
                                 + ":/var/run/docker.sock",
+                            },
+                            {
+                                "key": "group-add",
+                                "value": self.mesos_docker_user_group_id,
                             }
                         ],
                     },
                 },
             }
 
-            self.log.debug(json.dumps(task, indent=4))
+            self.log.info(json.dumps(task, indent=4))
 
             # fetch dags from uri
             if len(self.mesos_fetch_uri) > 0:
@@ -423,7 +461,7 @@ class AirflowMesosScheduler(MesosClient):
                     "value": "/mnt/mesos/sandbox",
                 }
                 task["command"]["environment"]["variables"].append(sand_box_env)
-                dag_file = cmd[8].replace('DAGS_FOLDER/', '')
+                dag_file = executor_config["dag_filename"]
                 task["command"]["uris"] = [{
                     "value": self.mesos_fetch_uri + "/" + dag_file,
                     "extract": False,
@@ -676,7 +714,6 @@ class MesosExecutor(BaseExecutor):
         prom.start_http_server(8100)
 
 
-
     def sync(self) -> None:
         """Updates states of the tasks."""
 
@@ -698,6 +735,24 @@ class MesosExecutor(BaseExecutor):
                 self.log.info("tasks failed %s", key)
             self.change_state(*results)
 
+
+
+    def _process_workloads(self, workloads: Sequence[workloads.All]) -> None:
+        from airflow.executors.workloads import ExecuteTask
+
+        # Airflow V3 version
+        for w in workloads:
+            if not isinstance(w, ExecuteTask):
+                raise RuntimeError(f"{type(self)} cannot handle workloads of type {type(w)}")
+            command = [w]
+            key = w.ti.key
+            queue = w.ti.queue
+            executor_config = w.ti.executor_config or {}
+
+            del self.queued_tasks[key]
+            self.execute_async(key=key, command=command, queue=queue, executor_config=executor_config)  # type: ignore[arg-type]
+            self.running.add(key)
+
     def execute_async(
         self,
         key: TaskInstanceKey,
@@ -705,6 +760,28 @@ class MesosExecutor(BaseExecutor):
         queue: str | None = None,
         executor_config: Any | None = None,
     ):
+        if executor_config and "command" in executor_config:
+            raise ValueError('Executor Config should never override "command"')
+
+        if len(command) == 1:
+            from airflow.executors.workloads import ExecuteTask
+
+            if isinstance(command[0], ExecuteTask):
+                workload = command[0]
+                ser_input = workload.model_dump_json()
+                executor_config['dag_filename'] = json.loads(ser_input).get("dag_rel_path")
+                command = [
+                    "python",
+                    "-m",
+                    "airflow.sdk.execution_time.execute_workload",
+                    "--json-string",
+                    "'"+ser_input+"'",
+                ]
+            else:
+                raise ValueError(
+                    f"BatchExecutor doesn't know how to handle workload of type: {type(command[0])}"
+                )
+
         """Execute Tasks"""
         self.log.info(
             "Add task %s with command %s with TaskInstance %s",
@@ -712,7 +789,6 @@ class MesosExecutor(BaseExecutor):
             command,
             executor_config,
         )
-        self.validate_command(command)
         self.task_queue.put((key, command, executor_config))
 
 
