@@ -1,14 +1,14 @@
 # Summary
 
-- [Übersicht](README.md)
+- [Overview](README.md)
 - [Installation](install.md)
-- [Architektur](architecture.md)
-- [Konfiguration](configuration.md)
+- [Architecture](architecture.md)
+- [Configuration](configuration.md)
 - [MesosOperator](operator.md)
-- [DAG-Beispiele](examples.md)
-- [Tests und Entwicklung](testing.md)
-- [Fehlerbehebung](troubleshooting.md)
+- [DAG examples](examples.md)
+- [Development and testing](testing.md)
+- [Troubleshooting](troubleshooting.md)
 
 # API
 
-- [Executor-API](api.md)
+- [Executor API](api.md)

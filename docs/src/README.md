@@ -1,31 +1,31 @@
 # Airflow Mesos Provider
 
-Der Airflow Mesos Provider integriert Apache Airflow mit Apache Mesos.
+The Airflow Mesos Provider integrates Apache Airflow with Apache Mesos.
 
-Er bietet zwei Ausführungsmodelle:
+It provides two execution models:
 
-- **MesosExecutor:** verteilt normale Airflow-Task-Workloads über ein Mesos-Framework.
-- **MesosOperator:** startet einen einzelnen DAG-Task als Mesos-Container und wartet auf dessen Abschluss.
+- **MesosExecutor:** distributes regular Airflow task workloads through a Mesos framework.
+- **MesosOperator:** starts a single DAG task as a Mesos container and waits for it to finish.
 
-## Schnellstart
+## Quick start
 
-1. Provider installieren und Airflow konfigurieren: [Installation](install.md)
-2. Architektur und Zuständigkeiten verstehen: [Architektur](architecture.md)
-3. Für einzelne Container-Tasks den [MesosOperator](operator.md) verwenden.
-4. Für vollständige Beispiele [DAG-Beispiele](examples.md) lesen.
-5. Mit [Tests und Entwicklung](testing.md) verifizieren.
+1. Install the provider and configure Airflow: [Installation](install.md)
+2. Understand the responsibilities and data flow: [Architecture](architecture.md)
+3. Use the [MesosOperator](operator.md) for individual container tasks.
+4. Read the [DAG examples](examples.md) for complete examples.
+5. Verify the setup with [Testing and development](testing.md).
 
-## Voraussetzungen
+## Requirements
 
-- Apache Airflow 3.x empfohlen; der Provider deklariert Airflow `>=2.0`.
-- Apache Mesos 1.6 oder neuer.
+- Apache Airflow 3.x recommended; the provider declares Airflow `>=2.0`.
+- Apache Mesos 1.6 or newer.
 - Python 3.x.
-- Für Docker-Container: ein Mesos-Agent mit aktivem Docker-Containerizer und Zugriff auf das gewünschte Image.
+- For Docker containers: a Mesos agent with the Docker containerizer enabled and access to the required image.
 
-SSL und Mesos-Authentifizierung sind optional, werden für produktive Cluster aber empfohlen.
+SSL and Mesos authentication are optional, but recommended for production clusters.
 
-## Weitere Dokumentation
+## Further documentation
 
-- [Konfiguration](configuration.md)
-- [Executor-API](api.md)
-- [Fehlerbehebung](troubleshooting.md)
+- [Configuration](configuration.md)
+- [Executor API](api.md)
+- [Troubleshooting](troubleshooting.md)

@@ -1,8 +1,8 @@
-# DAG-Beispiele
+# DAG examples
 
 ## MesosExecutor
 
-Mit dem Executor werden normale Airflow-Tasks über Mesos verteilt. Die konkrete DAG-Task benötigt keine spezielle Operator-Klasse:
+The executor distributes regular Airflow tasks through Mesos. The DAG task itself does not need a special operator class:
 
 ```python
 from datetime import datetime
@@ -23,7 +23,7 @@ with DAG("executor_example", schedule=None, start_date=datetime(2024, 1, 1), cat
 
 ## MesosOperator
 
-Für genau einen Container-Task:
+For one container task:
 
 ```python
 from datetime import datetime
@@ -42,4 +42,4 @@ with DAG("operator_example", schedule=None, start_date=datetime(2024, 1, 1), cat
     )
 ```
 
-Ein vollständiges, bewusst kurzes Test-DAG liegt unter `docs/examples/dags/mesos_operator_test.py`.
+A complete, intentionally short test DAG is available at `docs/examples/dags/mesos_operator_test.py`.

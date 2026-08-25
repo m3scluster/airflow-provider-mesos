@@ -1,24 +1,24 @@
-# Entwicklung und Tests
+# Development and testing
 
-## Nix-Umgebung
+## Nix environment
 
-Die Datei `shell.nix` stellt Python, Airflow, PostgreSQL und die Provider-Abhängigkeiten bereit:
+`shell.nix` provides Python, Airflow, PostgreSQL, and the provider dependencies:
 
 ```bash
 nix-shell
 ```
 
-Der Shell-Hook erstellt eine virtuelle Umgebung unter `/tmp/python-dev`, richtet die lokale Airflow-Datenbank ein und installiert den Provider editable.
+The shell hook creates a virtual environment under `/tmp/python-dev`, initializes the local Airflow database, and installs the provider in editable mode.
 
-## Unit-Tests
+## Unit tests
 
-Die Unit-Tests verwenden synthetische HTTP-Antworten und benötigen keinen Mesos- oder Airflow-Live-Dienst:
+The unit tests use synthetic HTTP responses and do not require a live Mesos or Airflow service:
 
 ```bash
 make test
 ```
 
-Der Test-Target nutzt:
+The test target runs:
 
 ```bash
 python3 -m unittest discover -s tests -v
@@ -30,10 +30,10 @@ python3 -m unittest discover -s tests -v
 make build
 ```
 
-Damit werden Source-Distribution und Wheel erzeugt. Vor dem Commit sollten mindestens `make test`, `make build` und `git diff --check` ausgeführt werden.
+This creates a source distribution and wheel. Before committing, run at least `make test`, `make build`, and `git diff --check`.
 
-## Live-Smoke-Test
+## Live smoke test
 
-Für eine echte Integration kann das Test-DAG in Airflow geladen und manuell gestartet werden. Voraussetzungen sind ein laufender Airflow-Scheduler mit `MesosExecutor`, eine erreichbare Executor-API auf Port 11000 und ein Mesos-Cluster mit passenden Agent-Attributen.
+For a real integration test, load the test DAG into Airflow and trigger it manually. Requirements are a running Airflow scheduler with `MesosExecutor`, a reachable executor API on port 11000, and a Mesos cluster with matching agent attributes.
 
-Die Mesos-Master-UI auf Port 5050 ist nur zur Beobachtung geeignet. Der Operator spricht nicht direkt mit der Master-UI.
+The Mesos master UI on port 5050 is for observation only. The operator does not communicate directly with the master UI.

@@ -1,17 +1,17 @@
-# Konfiguration
+# Configuration
 
-## Airflow-Executor
+## Airflow executor
 
-In `airflow.cfg` wird der Executor aktiviert:
+Enable the executor in `airflow.cfg`:
 
 ```ini
 [core]
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
 ```
 
-## Mesos-Konfiguration
+## Mesos configuration
 
-Die Werte sind Beispiele. Hosts, Zugangsdaten und Images müssen an die eigene Umgebung angepasst werden.
+The values below are examples. Adapt hosts, credentials, and images to your environment.
 
 ```ini
 [mesos]
@@ -46,17 +46,17 @@ api_password = <API_PASSWORD>
 operator_api_url = http://localhost:11000
 ```
 
-`operator_api_url` ist die Adresse, die der `MesosOperator` verwendet, wenn kein `airflow_scheduler_url` am Task gesetzt ist.
+`operator_api_url` is the address used by `MesosOperator` when no `airflow_scheduler_url` is set on the task.
 
-## Attribute
+## Attributes
 
-Globale Attribute gelten für Executor-Tasks. Task-spezifische Attribute werden vom Operator beziehungsweise `executor_config` ergänzt:
+Global attributes apply to executor tasks. Task-specific attributes are added by the operator or through `executor_config`:
 
 ```ini
 mesos_attributes = ["airflow:true", "gpu:true?:cpu:true"]
 ```
 
-Ein Operator kann zusätzlich Folgendes angeben:
+An operator can specify additional attributes:
 
 ```python
 MesosOperator(
@@ -67,4 +67,4 @@ MesosOperator(
 )
 ```
 
-Keine Secrets oder produktiven Infrastrukturadressen in DAG-Dateien versionieren. Für Umgebungen sollten Airflow Connections, Variables oder externe Secret-Backends verwendet werden.
+Do not commit secrets or production infrastructure addresses in DAG files. Use Airflow Connections, Variables, or external secret backends for environment-specific values.

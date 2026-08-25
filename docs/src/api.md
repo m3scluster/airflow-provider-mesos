@@ -1,12 +1,12 @@
-# Executor-API
+# Executor API
 
-Die API wird vom `MesosExecutor` im Airflow-Scheduler bereitgestellt. Standardadresse ist `http://localhost:11000`.
+The API is provided by `MesosExecutor` in the Airflow scheduler. The default address is `http://localhost:11000`.
 
 ## POST `/v0/queue_command`
 
-Reiht einen direkten Container-Task ein.
+Queues a direct container task.
 
-Beispielkörper:
+Example request body:
 
 ```json
 {
@@ -21,13 +21,13 @@ Beispielkörper:
 }
 ```
 
-Eine erfolgreiche Annahme liefert HTTP 200. Das bedeutet nur, dass der Auftrag in die Executor-Warteschlange übernommen wurde; die Mesos-Ausführung ist zu diesem Zeitpunkt noch nicht abgeschlossen.
+A successful acceptance returns HTTP 200. This only means that the request was accepted into the executor queue; Mesos execution has not necessarily finished yet.
 
 ## GET `/v0/task/<task_id>`
 
-Liefert den zuletzt bekannten Mesos-Status des Tasks. Der `task_id` muss URL-sicher kodiert werden, wenn er Zeichen außerhalb des üblichen Task-ID-Formats enthält.
+Returns the latest known Mesos status for the task. The `task_id` must be URL-encoded if it contains characters outside the usual task ID format.
 
-Der Operator erwartet ein Objekt mit einem Statusfeld, zum Beispiel:
+The operator expects an object with a status field, for example:
 
 ```json
 {
@@ -38,8 +38,8 @@ Der Operator erwartet ein Objekt mit einem Statusfeld, zum Beispiel:
 }
 ```
 
-Während der Ausführung können `TASK_STAGING`, `TASK_STARTING` und `TASK_RUNNING` auftreten. Terminale Fehlerzustände werden vom Operator in einen Airflow-Task-Fehler übersetzt.
+During execution, `TASK_STAGING`, `TASK_STARTING`, and `TASK_RUNNING` may occur. Terminal failure states are translated into an Airflow task failure by the operator.
 
-## Sicherheit
+## Security
 
-Die API sollte nur auf dem internen Airflow-/Scheduler-Netzwerk erreichbar sein. Zugangsdaten gehören in Airflow-Konfiguration oder Secret-Backends und nicht in versionierte DAGs. Die Mesos-Authentifizierung gegenüber dem Cluster wird separat über die `[mesos]`-Konfiguration gesteuert.
+The API should only be reachable on the internal Airflow/scheduler network. Store credentials in Airflow configuration or secret backends, not in versioned DAGs. Mesos authentication to the cluster is configured separately through `[mesos]`.

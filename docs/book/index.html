@@ -1,9 +1,9 @@
 <!DOCTYPE HTML>
-<html lang="de" class="light sidebar-visible" dir="ltr">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Übersicht - Airflow Mesos Provider</title>
+        <title>Overview - Airflow Mesos Provider</title>
 
 
         <!-- Custom HTML head -->
@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-2c0a9a8d.js";
+            window.path_to_searchindex_js = "searchindex-c65fa113.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-95e1e8ba.js"></script>
+        <script src="toc-d14b852d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -175,33 +175,33 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="airflow-mesos-provider"><a class="header" href="#airflow-mesos-provider">Airflow Mesos Provider</a></h1>
-<p>Der Airflow Mesos Provider integriert Apache Airflow mit Apache Mesos.</p>
-<p>Er bietet zwei Ausführungsmodelle:</p>
+<p>The Airflow Mesos Provider integrates Apache Airflow with Apache Mesos.</p>
+<p>It provides two execution models:</p>
 <ul>
-<li><strong>MesosExecutor:</strong> verteilt normale Airflow-Task-Workloads über ein Mesos-Framework.</li>
-<li><strong>MesosOperator:</strong> startet einen einzelnen DAG-Task als Mesos-Container und wartet auf dessen Abschluss.</li>
+<li><strong>MesosExecutor:</strong> distributes regular Airflow task workloads through a Mesos framework.</li>
+<li><strong>MesosOperator:</strong> starts a single DAG task as a Mesos container and waits for it to finish.</li>
 </ul>
-<h2 id="schnellstart"><a class="header" href="#schnellstart">Schnellstart</a></h2>
+<h2 id="quick-start"><a class="header" href="#quick-start">Quick start</a></h2>
 <ol>
-<li>Provider installieren und Airflow konfigurieren: <a href="install.html">Installation</a></li>
-<li>Architektur und Zuständigkeiten verstehen: <a href="architecture.html">Architektur</a></li>
-<li>Für einzelne Container-Tasks den <a href="operator.html">MesosOperator</a> verwenden.</li>
-<li>Für vollständige Beispiele <a href="examples.html">DAG-Beispiele</a> lesen.</li>
-<li>Mit <a href="testing.html">Tests und Entwicklung</a> verifizieren.</li>
+<li>Install the provider and configure Airflow: <a href="install.html">Installation</a></li>
+<li>Understand the responsibilities and data flow: <a href="architecture.html">Architecture</a></li>
+<li>Use the <a href="operator.html">MesosOperator</a> for individual container tasks.</li>
+<li>Read the <a href="examples.html">DAG examples</a> for complete examples.</li>
+<li>Verify the setup with <a href="testing.html">Testing and development</a>.</li>
 </ol>
-<h2 id="voraussetzungen"><a class="header" href="#voraussetzungen">Voraussetzungen</a></h2>
+<h2 id="requirements"><a class="header" href="#requirements">Requirements</a></h2>
 <ul>
-<li>Apache Airflow 3.x empfohlen; der Provider deklariert Airflow <code>&gt;=2.0</code>.</li>
-<li>Apache Mesos 1.6 oder neuer.</li>
+<li>Apache Airflow 3.x recommended; the provider declares Airflow <code>&gt;=2.0</code>.</li>
+<li>Apache Mesos 1.6 or newer.</li>
 <li>Python 3.x.</li>
-<li>Für Docker-Container: ein Mesos-Agent mit aktivem Docker-Containerizer und Zugriff auf das gewünschte Image.</li>
+<li>For Docker containers: a Mesos agent with the Docker containerizer enabled and access to the required image.</li>
 </ul>
-<p>SSL und Mesos-Authentifizierung sind optional, werden für produktive Cluster aber empfohlen.</p>
-<h2 id="weitere-dokumentation"><a class="header" href="#weitere-dokumentation">Weitere Dokumentation</a></h2>
+<p>SSL and Mesos authentication are optional, but recommended for production clusters.</p>
+<h2 id="further-documentation"><a class="header" href="#further-documentation">Further documentation</a></h2>
 <ul>
-<li><a href="configuration.html">Konfiguration</a></li>
-<li><a href="api.html">Executor-API</a></li>
-<li><a href="troubleshooting.html">Fehlerbehebung</a></li>
+<li><a href="configuration.html">Configuration</a></li>
+<li><a href="api.html">Executor API</a></li>
+<li><a href="troubleshooting.html">Troubleshooting</a></li>
 </ul>
 
                     </main>

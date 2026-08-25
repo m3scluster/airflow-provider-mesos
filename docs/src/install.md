@@ -1,35 +1,35 @@
 # Installation
 
-## Paketinstallation
+## Package installation
 
 ```bash
 pip install avmesos_airflow_provider
 ```
 
-Der Provider benötigt außerdem eine kompatible Airflow-, `avmesos`- und HTTP-Umgebung. Für lokale Entwicklung stellt `shell.nix` eine reproduzierbare Umgebung bereit.
+The provider also requires a compatible Airflow, `avmesos`, and HTTP environment. For local development, `shell.nix` provides a reproducible environment.
 
-## Airflow konfigurieren
+## Configure Airflow
 
-Für die Ausführung normaler Airflow-Tasks über Mesos:
+To run regular Airflow tasks through Mesos:
 
 ```ini
 [core]
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
 ```
 
-Die vollständige Beispielkonfiguration steht in [Konfiguration](configuration.md).
+The complete example configuration is available in [Configuration](configuration.md).
 
-## Lokale Entwicklung
+## Local development
 
 ```bash
 nix-shell
 ```
 
-Die Nix-Shell installiert Airflow, `avmesos`, den Provider und PostgreSQL. Sie richtet außerdem die lokale Airflow-Datenbank und die DAG-Umgebung ein.
+The Nix shell installs Airflow, `avmesos`, the provider, and PostgreSQL. It also initializes the local Airflow database and DAG environment.
 
-## MesosOperator verwenden
+## Use MesosOperator
 
-Der Operator benötigt keinen zweiten Executor. Der Airflow-Scheduler mit `MesosExecutor` stellt die interne API auf Port `11000` bereit. Ein Minimalbeispiel:
+The operator does not require a second executor. The Airflow scheduler with `MesosExecutor` exposes the internal API on port `11000`. A minimal example:
 
 ```python
 from datetime import datetime
@@ -47,4 +47,4 @@ with DAG("hello_mesos", schedule=None, start_date=datetime(2024, 1, 1), catchup=
     )
 ```
 
-Details befinden sich in der [Operator-Referenz](operator.md).
+See the [Operator reference](operator.md) for details.

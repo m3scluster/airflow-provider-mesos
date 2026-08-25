@@ -1,8 +1,8 @@
 # MesosOperator
 
-`MesosOperator` führt einen einzelnen Container-Task unter Apache Mesos aus. Das Verhalten orientiert sich am Airflow `DockerOperator`, die Ausführung erfolgt jedoch über die MesosExecutor-API.
+`MesosOperator` runs one container task under Apache Mesos. Its behavior follows the Airflow `DockerOperator` model, but execution takes place through the MesosExecutor API.
 
-## Beispiel
+## Example
 
 ```python
 from datetime import datetime
@@ -26,36 +26,36 @@ with DAG(
     )
 ```
 
-## Parameter
+## Parameters
 
-| Parameter | Beschreibung |
+| Parameter | Description |
 |---|---|
-| `image` | Container-Image; erforderlich. |
-| `command` | String oder Argumentliste. Strings laufen über `/bin/sh -c`. |
-| `cpus` | Angeforderte CPU-Ressourcen. |
-| `mem_limit` | Angeforderter Speicher, zum Beispiel `128m` oder eine Zahl. `memlimit` bleibt als Alias verfügbar. |
-| `disk` | Angeforderter Mesos-Datenträger. |
-| `environment` | Dictionary mit Umgebungsvariablen. |
-| `attributes` | Liste von Mesos-Attributbedingungen. |
-| `force_pull` | Steuert, ob das Image erneut gezogen werden soll. |
-| `network_mode` | Docker-Netzwerkmodus. |
-| `user` | Benutzer im Container. |
-| `volumes` | Volume-Angaben. |
-| `airflow_scheduler_url` | URL der Executor-API; Standard ist `operator_api_url` beziehungsweise `http://localhost:11000`. |
-| `poll_interval` | Sekunden zwischen Statusabfragen. |
-| `startup_timeout` | Maximale Wartezeit in Sekunden. |
+| `image` | Container image; required. |
+| `command` | String or argument list. Strings are executed through `/bin/sh -c`. |
+| `cpus` | Requested CPU resources. |
+| `mem_limit` | Requested memory, for example `128m` or a number. `memlimit` remains available as an alias. |
+| `disk` | Requested Mesos disk resources. |
+| `environment` | Dictionary of environment variables. |
+| `attributes` | List of Mesos attribute constraints. |
+| `force_pull` | Controls whether the image should be pulled again. |
+| `network_mode` | Docker network mode. |
+| `user` | User inside the container. |
+| `volumes` | Volume specifications. |
+| `airflow_scheduler_url` | Executor API URL; defaults to `operator_api_url` or `http://localhost:11000`. |
+| `poll_interval` | Seconds between status requests. |
+| `startup_timeout` | Maximum wait time in seconds. |
 
-Airflow-Standardparameter wie `task_id`, `retries`, `pool` und `queue` werden über `BaseOperator` unterstützt.
+Airflow standard parameters such as `task_id`, `retries`, `pool`, and `queue` are supported through `BaseOperator`.
 
-## Statusverhalten
+## Status behavior
 
-Der Operator beendet sich erfolgreich bei:
+The operator succeeds when the status is:
 
 ```text
 TASK_FINISHED
 ```
 
-Folgende Zustände führen zu `AirflowException`:
+The following states raise `AirflowException`:
 
 ```text
 TASK_FAILED
@@ -65,8 +65,8 @@ TASK_LOST
 TASK_UNREACHABLE
 ```
 
-HTTP-Fehler, ungültige JSON-Antworten und das Überschreiten von `startup_timeout` werden ebenfalls als Task-Fehler gemeldet.
+HTTP errors, invalid JSON responses, and exceeding `startup_timeout` are also reported as task failures.
 
-## Einschränkung bei Abbruch
+## Cancellation limitation
 
-Die aktuelle Executor-API besitzt keinen separaten Kill-Endpunkt für direkt eingereihte Operator-Tasks. `on_kill()` protokolliert diese Einschränkung. Für lange Tasks sollten Airflow-Timeouts und kurze, kontrolliert abbrechbare Container-Kommandos verwendet werden.
+The current executor API has no separate kill endpoint for directly queued operator tasks. `on_kill()` logs this limitation. For long-running tasks, use Airflow timeouts and container commands that can be stopped in a controlled way.

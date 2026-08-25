@@ -1,38 +1,38 @@
-# Fehlerbehebung
+# Troubleshooting
 
-## Operator bleibt im Polling
+## Operator remains in polling
 
-Prüfen:
+Check the following:
 
-1. Läuft der Airflow-Scheduler mit `MesosExecutor`?
-2. Ist `airflow_scheduler_url` korrekt und auf Port 11000 erreichbar?
-3. Ist das Framework im Mesos-Master registriert?
-4. Gibt es passende CPU-, Speicher- und Attribut-Offers?
+1. Is the Airflow scheduler running with `MesosExecutor`?
+2. Is `airflow_scheduler_url` correct and reachable on port 11000?
+3. Is the framework registered with the Mesos master?
+4. Are there matching CPU, memory, and attribute offers?
 
-Die Executor-API meldet `HTTP 200` beim Queueing nur für die Annahme in die Warteschlange. Der Operator wartet danach weiter auf den Mesos-Status.
+The executor API returns `HTTP 200` during queueing only to confirm acceptance into the queue. The operator then continues waiting for the Mesos status.
 
-## `TASK_FAILED` oder `TASK_ERROR`
+## `TASK_FAILED` or `TASK_ERROR`
 
-Mesos-Agent-Logs und die Task-Details in der Mesos-UI prüfen. Häufige Ursachen sind ein nicht verfügbares Image, fehlende Ressourcen, nicht passende Attribute oder ein falscher Container-/Netzwerkmodus.
+Check Mesos agent logs and the task details in the Mesos UI. Common causes include an unavailable image, insufficient resources, unmatched attributes, or an incorrect container/network mode.
 
 ## `TASK_LOST`
 
-Der Agent oder die Framework-Verbindung ist verloren gegangen. Prüfen, ob das Framework neu verbunden ist und ob der Agent aktiv ist.
+The agent or framework connection was lost. Check whether the framework has reconnected and whether the agent is active.
 
-## API antwortet mit 401
+## API returns 401
 
-Die API-Konfiguration und der verwendete Endpunkt prüfen. `/v0/dags` ist geschützt; der Operator verwendet `/v0/queue_command` und `/v0/task/<task_id>`. Die API sollte nicht über einen öffentlichen Reverse Proxy ohne passende Authentifizierung veröffentlicht werden.
+Check the API configuration and the endpoint being used. `/v0/dags` is protected; the operator uses `/v0/queue_command` and `/v0/task/<task_id>`. Do not expose the API through a public reverse proxy without suitable authentication.
 
-## DAG wird nicht geladen
+## DAG is not loaded
 
-Zuerst den Import isoliert prüfen:
+First check imports in isolation:
 
 ```bash
 airflow dags list-import-errors
 ```
 
-Danach sicherstellen, dass `dags_folder` auf das Verzeichnis mit der DAG-Datei zeigt und dass der Provider in derselben Python-Umgebung installiert ist wie Airflow.
+Then make sure `dags_folder` points to the directory containing the DAG and that the provider is installed in the same Python environment as Airflow.
 
-## Ressourcen passen nicht
+## Resources do not match
 
-`cpus`, `mem_limit` und `disk` müssen zu den freien Mesos-Offers passen. Bei Attributen muss mindestens ein aktiver Agent alle Bedingungen erfüllen. Globale Attribute aus `mesos_attributes` und task-spezifische Attribute werden zusammen verwendet.
+`cpus`, `mem_limit`, and `disk` must fit the available Mesos offers. For attributes, at least one active agent must satisfy every constraint. Global attributes from `mesos_attributes` and task-specific attributes are used together.

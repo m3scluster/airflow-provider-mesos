@@ -1,27 +1,27 @@
-# Architektur
+# Architecture
 
-Der Provider stellt zwei unterschiedliche Ausführungswege bereit:
+The provider offers two distinct execution paths:
 
 ## MesosExecutor
 
-`MesosExecutor` ersetzt den Airflow-Executor. Airflow übergibt eingeplante Task-Workloads an ein Mesos-Framework. Das Framework nimmt Mesos-Offers an und startet daraus Airflow-Tasks als Container-Tasks.
+`MesosExecutor` replaces the Airflow executor. Airflow submits scheduled task workloads to a Mesos framework. The framework accepts Mesos offers and starts Airflow tasks as container tasks.
 
-Dieser Weg eignet sich, wenn ein gesamter Airflow-DAG oder viele normale Airflow-Tasks über Mesos verteilt werden sollen.
+This path is suitable when an entire Airflow DAG, or many regular Airflow tasks, should be distributed through Mesos.
 
 ## MesosOperator
 
-`MesosOperator` läuft innerhalb eines normalen Airflow-DAGs und startet genau einen einzelnen Task als Mesos-Container. Er ist dem `DockerOperator` nachempfunden, verwendet aber die vom `MesosExecutor` bereitgestellte lokale API.
+`MesosOperator` runs inside a regular Airflow DAG and starts exactly one task as a Mesos container. It is modeled after `DockerOperator`, but uses the local API provided by `MesosExecutor`.
 
-Der Ablauf ist:
+The flow is:
 
-1. Der Operator sendet den Container-Auftrag an `POST /v0/queue_command`.
-2. Der MesosExecutor reiht den Auftrag ein und nimmt ein passendes Mesos-Offer an.
-3. Der Operator fragt `GET /v0/task/<task_id>` ab.
-4. Der Operator wartet auf `TASK_FINISHED` oder meldet einen terminalen Fehler an Airflow.
+1. The operator sends the container request to `POST /v0/queue_command`.
+2. The MesosExecutor queues the request and accepts a matching Mesos offer.
+3. The operator polls `GET /v0/task/<task_id>`.
+4. The operator waits for `TASK_FINISHED` or reports a terminal failure to Airflow.
 
-Die API läuft standardmäßig auf `http://localhost:11000`. Sie wird vom Scheduler-Prozess bereitgestellt und ist nicht die Mesos-Master-API auf Port 5050.
+The API runs at `http://localhost:11000` by default. It is provided by the scheduler process and is not the Mesos master API on port 5050.
 
-## Datenfluss
+## Data flow
 
 ```text
 Airflow Scheduler
@@ -38,4 +38,4 @@ Mesos Master :5050
 Mesos Agent -> Docker/Mesos Container
 ```
 
-Der Operator erzeugt kein eigenes Mesos-Framework. Dadurch bleiben Offer-Verteilung, Ressourcenprüfung und Framework-Authentifizierung zentral im bestehenden Executor.
+The operator does not create its own Mesos framework. Offer distribution, resource checking, and framework authentication therefore remain centralized in the existing executor.
