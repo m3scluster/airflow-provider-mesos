@@ -1,10 +1,8 @@
 [book]
 authors = ["Andreas Peters"]
-language = "en"
-multilingual = false
+language = "de"
 src = "src"
 title = "Airflow Mesos Provider"
 
 [build]
 create-missing = true
-preprocess = ["links", "index"]

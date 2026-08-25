@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Übersicht - Airflow Mesos Provider</title>
+        <title>Architektur - Airflow Mesos Provider</title>
 
 
         <!-- Custom HTML head -->
@@ -174,42 +174,46 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="airflow-mesos-provider"><a class="header" href="#airflow-mesos-provider">Airflow Mesos Provider</a></h1>
-<p>Der Airflow Mesos Provider integriert Apache Airflow mit Apache Mesos.</p>
-<p>Er bietet zwei Ausführungsmodelle:</p>
-<ul>
-<li><strong>MesosExecutor:</strong> verteilt normale Airflow-Task-Workloads über ein Mesos-Framework.</li>
-<li><strong>MesosOperator:</strong> startet einen einzelnen DAG-Task als Mesos-Container und wartet auf dessen Abschluss.</li>
-</ul>
-<h2 id="schnellstart"><a class="header" href="#schnellstart">Schnellstart</a></h2>
+                        <h1 id="architektur"><a class="header" href="#architektur">Architektur</a></h1>
+<p>Der Provider stellt zwei unterschiedliche Ausführungswege bereit:</p>
+<h2 id="mesosexecutor"><a class="header" href="#mesosexecutor">MesosExecutor</a></h2>
+<p><code>MesosExecutor</code> ersetzt den Airflow-Executor. Airflow übergibt eingeplante Task-Workloads an ein Mesos-Framework. Das Framework nimmt Mesos-Offers an und startet daraus Airflow-Tasks als Container-Tasks.</p>
+<p>Dieser Weg eignet sich, wenn ein gesamter Airflow-DAG oder viele normale Airflow-Tasks über Mesos verteilt werden sollen.</p>
+<h2 id="mesosoperator"><a class="header" href="#mesosoperator">MesosOperator</a></h2>
+<p><code>MesosOperator</code> läuft innerhalb eines normalen Airflow-DAGs und startet genau einen einzelnen Task als Mesos-Container. Er ist dem <code>DockerOperator</code> nachempfunden, verwendet aber die vom <code>MesosExecutor</code> bereitgestellte lokale API.</p>
+<p>Der Ablauf ist:</p>
 <ol>
-<li>Provider installieren und Airflow konfigurieren: <a href="install.html">Installation</a></li>
-<li>Architektur und Zuständigkeiten verstehen: <a href="architecture.html">Architektur</a></li>
-<li>Für einzelne Container-Tasks den <a href="operator.html">MesosOperator</a> verwenden.</li>
-<li>Für vollständige Beispiele <a href="examples.html">DAG-Beispiele</a> lesen.</li>
-<li>Mit <a href="testing.html">Tests und Entwicklung</a> verifizieren.</li>
+<li>Der Operator sendet den Container-Auftrag an <code>POST /v0/queue_command</code>.</li>
+<li>Der MesosExecutor reiht den Auftrag ein und nimmt ein passendes Mesos-Offer an.</li>
+<li>Der Operator fragt <code>GET /v0/task/&lt;task_id&gt;</code> ab.</li>
+<li>Der Operator wartet auf <code>TASK_FINISHED</code> oder meldet einen terminalen Fehler an Airflow.</li>
 </ol>
-<h2 id="voraussetzungen"><a class="header" href="#voraussetzungen">Voraussetzungen</a></h2>
-<ul>
-<li>Apache Airflow 3.x empfohlen; der Provider deklariert Airflow <code>&gt;=2.0</code>.</li>
-<li>Apache Mesos 1.6 oder neuer.</li>
-<li>Python 3.x.</li>
-<li>Für Docker-Container: ein Mesos-Agent mit aktivem Docker-Containerizer und Zugriff auf das gewünschte Image.</li>
-</ul>
-<p>SSL und Mesos-Authentifizierung sind optional, werden für produktive Cluster aber empfohlen.</p>
-<h2 id="weitere-dokumentation"><a class="header" href="#weitere-dokumentation">Weitere Dokumentation</a></h2>
-<ul>
-<li><a href="configuration.html">Konfiguration</a></li>
-<li><a href="api.html">Executor-API</a></li>
-<li><a href="troubleshooting.html">Fehlerbehebung</a></li>
-</ul>
+<p>Die API läuft standardmäßig auf <code>http://localhost:11000</code>. Sie wird vom Scheduler-Prozess bereitgestellt und ist nicht die Mesos-Master-API auf Port 5050.</p>
+<h2 id="datenfluss"><a class="header" href="#datenfluss">Datenfluss</a></h2>
+<pre><code class="language-text">Airflow Scheduler
+      |
+      | MesosExecutor API :11000
+      v
+MesosExecutor Framework
+      |
+      | Mesos scheduler protocol
+      v
+Mesos Master :5050
+      |
+      v
+Mesos Agent -&gt; Docker/Mesos Container
+</code></pre>
+<p>Der Operator erzeugt kein eigenes Mesos-Framework. Dadurch bleiben Offer-Verteilung, Ressourcenprüfung und Framework-Authentifizierung zentral im bestehenden Executor.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="install.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
 
-                            <a rel="next prefetch" href="install.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="configuration.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -219,8 +223,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="install.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
 
-                    <a rel="next prefetch" href="install.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="configuration.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

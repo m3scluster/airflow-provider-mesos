@@ -1,44 +1,64 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="de" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Airflow Mesos Provider</title>
-        <meta name="robots" content="noindex" />
+        <meta name="robots" content="noindex">
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="highlight.css">
-        <link rel="stylesheet" href="tomorrow-night.css">
-        <link rel="stylesheet" href="ayu-highlight.css">
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-2c0a9a8d.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-95e1e8ba.js"></script>
     </head>
     <body>
-        <!-- Provide site root to javascript -->
-        <script type="text/javascript">
-            var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
-        </script>
-
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -51,57 +71,70 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
-            var theme;
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
-            html.classList.remove('no-js')
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            html.classList.add("js");
         </script>
 
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
-            var html = document.querySelector('html');
-            var sidebar = 'hidden';
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="install.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded affix "><li class="part-title">API</li></ol>
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
-        <div id="page-wrapper" class="page-wrapper">
+        <div id="mdbook-page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky bordered">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
                         </button>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
                         </button>
                     </div>
 
@@ -109,142 +142,426 @@
 
                     <div class="right-buttons">
                         <a href="print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
                         </a>
+
                     </div>
                 </div>
 
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
                     </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
                         link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
                     });
                 </script>
 
-                <div id="content" class="content">
+                <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="airflow-mesos-provider"><a class="header" href="#airflow-mesos-provider">Airflow Mesos Provider</a></h1>
-<h2 id="introduction"><a class="header" href="#introduction">Introduction</a></h2>
-<p>There are two parts of the &quot;Airflow Mesos Provider&quot;.</p>
+<p>Der Airflow Mesos Provider integriert Apache Airflow mit Apache Mesos.</p>
+<p>Er bietet zwei Ausführungsmodelle:</p>
 <ul>
-<li>Mesos Scheduler: These provide the possibility to schedule Airflow tasks over the Mesos infrastructure</li>
-<li>Mesos Operator: These will run the specific DAG Task direct as Mesos task.</li>
+<li><strong>MesosExecutor:</strong> verteilt normale Airflow-Task-Workloads über ein Mesos-Framework.</li>
+<li><strong>MesosOperator:</strong> startet einen einzelnen DAG-Task als Mesos-Container und wartet auf dessen Abschluss.</li>
 </ul>
-<h2 id="requirements"><a class="header" href="#requirements">Requirements</a></h2>
-<ul>
-<li>Apache Mesos min 1.6.0</li>
-<li>Mesos with SSL and Authentication is optional</li>
-<li>Airflow 2.x</li>
-<li>Python 3.x</li>
-</ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="how-to-install-the-av-mesos-airflow-provider"><a class="header" href="#how-to-install-the-av-mesos-airflow-provider">How to install the AV Mesos Airflow Provider</a></h1>
-<p>To install the Mesos Airflow Provider, you have to to the following steps:</p>
+<h2 id="schnellstart"><a class="header" href="#schnellstart">Schnellstart</a></h2>
 <ol>
-<li>Install the provider</li>
+<li>Provider installieren und Airflow konfigurieren: <a href="#installation">Installation</a></li>
+<li>Architektur und Zuständigkeiten verstehen: <a href="#architektur">Architektur</a></li>
+<li>Für einzelne Container-Tasks den <a href="#mesosoperator-1">MesosOperator</a> verwenden.</li>
+<li>Für vollständige Beispiele <a href="#dag-beispiele">DAG-Beispiele</a> lesen.</li>
+<li>Mit <a href="#entwicklung-und-tests">Tests und Entwicklung</a> verifizieren.</li>
 </ol>
+<h2 id="voraussetzungen"><a class="header" href="#voraussetzungen">Voraussetzungen</a></h2>
+<ul>
+<li>Apache Airflow 3.x empfohlen; der Provider deklariert Airflow <code>&gt;=2.0</code>.</li>
+<li>Apache Mesos 1.6 oder neuer.</li>
+<li>Python 3.x.</li>
+<li>Für Docker-Container: ein Mesos-Agent mit aktivem Docker-Containerizer und Zugriff auf das gewünschte Image.</li>
+</ul>
+<p>SSL und Mesos-Authentifizierung sind optional, werden für produktive Cluster aber empfohlen.</p>
+<h2 id="weitere-dokumentation"><a class="header" href="#weitere-dokumentation">Weitere Dokumentation</a></h2>
+<ul>
+<li><a href="#konfiguration">Konfiguration</a></li>
+<li><a href="#executor-api">Executor-API</a></li>
+<li><a href="#fehlerbehebung">Fehlerbehebung</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<h2 id="paketinstallation"><a class="header" href="#paketinstallation">Paketinstallation</a></h2>
 <pre><code class="language-bash">pip install avmesos_airflow_provider
 </code></pre>
-<ol start="2">
-<li>Configure Airflow to use the new executor</li>
-</ol>
-<pre><code class="language-bash">vim airflow.cfg
-
-[core]
+<p>Der Provider benötigt außerdem eine kompatible Airflow-, <code>avmesos</code>- und HTTP-Umgebung. Für lokale Entwicklung stellt <code>shell.nix</code> eine reproduzierbare Umgebung bereit.</p>
+<h2 id="airflow-konfigurieren"><a class="header" href="#airflow-konfigurieren">Airflow konfigurieren</a></h2>
+<p>Für die Ausführung normaler Airflow-Tasks über Mesos:</p>
+<pre><code class="language-ini">[core]
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
+</code></pre>
+<p>Die vollständige Beispielkonfiguration steht in <a href="#konfiguration">Konfiguration</a>.</p>
+<h2 id="lokale-entwicklung"><a class="header" href="#lokale-entwicklung">Lokale Entwicklung</a></h2>
+<pre><code class="language-bash">nix-shell
+</code></pre>
+<p>Die Nix-Shell installiert Airflow, <code>avmesos</code>, den Provider und PostgreSQL. Sie richtet außerdem die lokale Airflow-Datenbank und die DAG-Umgebung ein.</p>
+<h2 id="mesosoperator-verwenden"><a class="header" href="#mesosoperator-verwenden">MesosOperator verwenden</a></h2>
+<p>Der Operator benötigt keinen zweiten Executor. Der Airflow-Scheduler mit <code>MesosExecutor</code> stellt die interne API auf Port <code>11000</code> bereit. Ein Minimalbeispiel:</p>
+<pre><code class="language-python">from datetime import datetime
 
-[mesos]
-master = leader.mesos:5050
+from airflow import DAG
+from avmesos_airflow_provider.operators.mesos import MesosOperator
+
+with DAG("hello_mesos", schedule=None, start_date=datetime(2024, 1, 1), catchup=False) as dag:
+    MesosOperator(
+        task_id="hello",
+        image="alpine:3.20",
+        command="echo hello",
+        cpus=0.1,
+        mem_limit="128m",
+    )
+</code></pre>
+<p>Details befinden sich in der <a href="#mesosoperator-1">Operator-Referenz</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="architektur"><a class="header" href="#architektur">Architektur</a></h1>
+<p>Der Provider stellt zwei unterschiedliche Ausführungswege bereit:</p>
+<h2 id="mesosexecutor"><a class="header" href="#mesosexecutor">MesosExecutor</a></h2>
+<p><code>MesosExecutor</code> ersetzt den Airflow-Executor. Airflow übergibt eingeplante Task-Workloads an ein Mesos-Framework. Das Framework nimmt Mesos-Offers an und startet daraus Airflow-Tasks als Container-Tasks.</p>
+<p>Dieser Weg eignet sich, wenn ein gesamter Airflow-DAG oder viele normale Airflow-Tasks über Mesos verteilt werden sollen.</p>
+<h2 id="mesosoperator"><a class="header" href="#mesosoperator">MesosOperator</a></h2>
+<p><code>MesosOperator</code> läuft innerhalb eines normalen Airflow-DAGs und startet genau einen einzelnen Task als Mesos-Container. Er ist dem <code>DockerOperator</code> nachempfunden, verwendet aber die vom <code>MesosExecutor</code> bereitgestellte lokale API.</p>
+<p>Der Ablauf ist:</p>
+<ol>
+<li>Der Operator sendet den Container-Auftrag an <code>POST /v0/queue_command</code>.</li>
+<li>Der MesosExecutor reiht den Auftrag ein und nimmt ein passendes Mesos-Offer an.</li>
+<li>Der Operator fragt <code>GET /v0/task/&lt;task_id&gt;</code> ab.</li>
+<li>Der Operator wartet auf <code>TASK_FINISHED</code> oder meldet einen terminalen Fehler an Airflow.</li>
+</ol>
+<p>Die API läuft standardmäßig auf <code>http://localhost:11000</code>. Sie wird vom Scheduler-Prozess bereitgestellt und ist nicht die Mesos-Master-API auf Port 5050.</p>
+<h2 id="datenfluss"><a class="header" href="#datenfluss">Datenfluss</a></h2>
+<pre><code class="language-text">Airflow Scheduler
+      |
+      | MesosExecutor API :11000
+      v
+MesosExecutor Framework
+      |
+      | Mesos scheduler protocol
+      v
+Mesos Master :5050
+      |
+      v
+Mesos Agent -&gt; Docker/Mesos Container
+</code></pre>
+<p>Der Operator erzeugt kein eigenes Mesos-Framework. Dadurch bleiben Offer-Verteilung, Ressourcenprüfung und Framework-Authentifizierung zentral im bestehenden Executor.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="konfiguration"><a class="header" href="#konfiguration">Konfiguration</a></h1>
+<h2 id="airflow-executor"><a class="header" href="#airflow-executor">Airflow-Executor</a></h2>
+<p>In <code>airflow.cfg</code> wird der Executor aktiviert:</p>
+<pre><code class="language-ini">[core]
+executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
+</code></pre>
+<h2 id="mesos-konfiguration"><a class="header" href="#mesos-konfiguration">Mesos-Konfiguration</a></h2>
+<p>Die Werte sind Beispiele. Hosts, Zugangsdaten und Images müssen an die eigene Umgebung angepasst werden.</p>
+<pre><code class="language-ini">[mesos]
+mesos_ssl = True
+master = mesos-master.example.invalid:5050
 framework_name = Airflow
 checkpoint = True
 failover_timeout = 604800
 command_shell = True
-task_cpu = 1
-task_memory = 20000
+
+task_cpu = 0.1
+task_memory = 512
+task_disk = 1000
+
 authenticate = True
-default_principal = &lt;MESOS USER&gt;
-default_secret = &lt;MESOS PASSWORD&gt;
-docker_image_slave = &lt;AIRFLOW DOCKER IMAGE&gt;
+default_principal = &lt;MESOS_PRINCIPAL&gt;
+default_secret = &lt;MESOS_SECRET&gt;
+
+docker_image_slave = &lt;AIRFLOW_RUNTIME_IMAGE&gt;
 docker_volume_driver = local
 docker_volume_dag_name = airflowdags
-docker_volume_dag_container_path = /home/airflow/airflow/dags/
-docker_sock = /var/run/docker.sock
+docker_volume_dag_container_path = /airflow/dags/
 docker_volume_logs_name = airflowlogs
-docker_volume_logs_container_path = /home/airflow/airflow/logs/
-docker_environment = '{ &quot;name&quot;:&quot;&lt;KEY&gt;&quot;, &quot;value&quot;:&quot;&lt;VALUE&gt;&quot; }, { ... },' // &lt;&lt; do not forget the comma at the end.
-</code></pre>
-<h2 id="dag-example-with-mesos-executor"><a class="header" href="#dag-example-with-mesos-executor">DAG example with mesos executor</a></h2>
-<pre><code class="language-python">from airflow import DAG
-from datetime import datetime, timedelta
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.providers.docker.operators.docker import DockerOperator
-from airflow.operators.python import PythonOperator
+docker_volume_logs_container_path = /airflow/logs/
+docker_sock = /var/run/docker.sock
+docker_user_group_id = &lt;DOCKER_GROUP_ID&gt;
+docker_network_mode = bridge
+docker_environment = []
 
-default_args = {
-        'owner'                 : 'airflow',
-        'description'           : 'Use of the DockerOperator',
-        'depend_on_past'        : True,
+api_username = &lt;API_USERNAME&gt;
+api_password = &lt;API_PASSWORD&gt;
+operator_api_url = http://localhost:11000
+</code></pre>
+<p><code>operator_api_url</code> ist die Adresse, die der <code>MesosOperator</code> verwendet, wenn kein <code>airflow_scheduler_url</code> am Task gesetzt ist.</p>
+<h2 id="attribute"><a class="header" href="#attribute">Attribute</a></h2>
+<p>Globale Attribute gelten für Executor-Tasks. Task-spezifische Attribute werden vom Operator beziehungsweise <code>executor_config</code> ergänzt:</p>
+<pre><code class="language-ini">mesos_attributes = ["airflow:true", "gpu:true?:cpu:true"]
+</code></pre>
+<p>Ein Operator kann zusätzlich Folgendes angeben:</p>
+<pre><code class="language-python">MesosOperator(
+    task_id="cpu_task",
+    image="alpine:3.20",
+    command="echo hello",
+    attributes=["cpu:true"],
+)
+</code></pre>
+<p>Keine Secrets oder produktiven Infrastrukturadressen in DAG-Dateien versionieren. Für Umgebungen sollten Airflow Connections, Variables oder externe Secret-Backends verwendet werden.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="mesosoperator-1"><a class="header" href="#mesosoperator-1">MesosOperator</a></h1>
+<p><code>MesosOperator</code> führt einen einzelnen Container-Task unter Apache Mesos aus. Das Verhalten orientiert sich am Airflow <code>DockerOperator</code>, die Ausführung erfolgt jedoch über die MesosExecutor-API.</p>
+<h2 id="beispiel"><a class="header" href="#beispiel">Beispiel</a></h2>
+<pre><code class="language-python">from datetime import datetime
+
+from airflow import DAG
+from avmesos_airflow_provider.operators.mesos import MesosOperator
+
+with DAG(
+    dag_id="mesos_operator_example",
+    schedule=None,
+    start_date=datetime(2024, 1, 1),
+    catchup=False,
+) as dag:
+    MesosOperator(
+        task_id="hello_mesos",
+        image="alpine:3.20",
+        command="echo hello from Mesos",
+        cpus=0.1,
+        mem_limit="128m",
+        attributes=["airflow:true"],
+    )
+</code></pre>
+<h2 id="parameter"><a class="header" href="#parameter">Parameter</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Parameter</th><th>Beschreibung</th></tr>
+</thead>
+<tbody>
+<tr><td><code>image</code></td><td>Container-Image; erforderlich.</td></tr>
+<tr><td><code>command</code></td><td>String oder Argumentliste. Strings laufen über <code>/bin/sh -c</code>.</td></tr>
+<tr><td><code>cpus</code></td><td>Angeforderte CPU-Ressourcen.</td></tr>
+<tr><td><code>mem_limit</code></td><td>Angeforderter Speicher, zum Beispiel <code>128m</code> oder eine Zahl. <code>memlimit</code> bleibt als Alias verfügbar.</td></tr>
+<tr><td><code>disk</code></td><td>Angeforderter Mesos-Datenträger.</td></tr>
+<tr><td><code>environment</code></td><td>Dictionary mit Umgebungsvariablen.</td></tr>
+<tr><td><code>attributes</code></td><td>Liste von Mesos-Attributbedingungen.</td></tr>
+<tr><td><code>force_pull</code></td><td>Steuert, ob das Image erneut gezogen werden soll.</td></tr>
+<tr><td><code>network_mode</code></td><td>Docker-Netzwerkmodus.</td></tr>
+<tr><td><code>user</code></td><td>Benutzer im Container.</td></tr>
+<tr><td><code>volumes</code></td><td>Volume-Angaben.</td></tr>
+<tr><td><code>airflow_scheduler_url</code></td><td>URL der Executor-API; Standard ist <code>operator_api_url</code> beziehungsweise <code>http://localhost:11000</code>.</td></tr>
+<tr><td><code>poll_interval</code></td><td>Sekunden zwischen Statusabfragen.</td></tr>
+<tr><td><code>startup_timeout</code></td><td>Maximale Wartezeit in Sekunden.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Airflow-Standardparameter wie <code>task_id</code>, <code>retries</code>, <code>pool</code> und <code>queue</code> werden über <code>BaseOperator</code> unterstützt.</p>
+<h2 id="statusverhalten"><a class="header" href="#statusverhalten">Statusverhalten</a></h2>
+<p>Der Operator beendet sich erfolgreich bei:</p>
+<pre><code class="language-text">TASK_FINISHED
+</code></pre>
+<p>Folgende Zustände führen zu <code>AirflowException</code>:</p>
+<pre><code class="language-text">TASK_FAILED
+TASK_ERROR
+TASK_KILLED
+TASK_LOST
+TASK_UNREACHABLE
+</code></pre>
+<p>HTTP-Fehler, ungültige JSON-Antworten und das Überschreiten von <code>startup_timeout</code> werden ebenfalls als Task-Fehler gemeldet.</p>
+<h2 id="einschränkung-bei-abbruch"><a class="header" href="#einschränkung-bei-abbruch">Einschränkung bei Abbruch</a></h2>
+<p>Die aktuelle Executor-API besitzt keinen separaten Kill-Endpunkt für direkt eingereihte Operator-Tasks. <code>on_kill()</code> protokolliert diese Einschränkung. Für lange Tasks sollten Airflow-Timeouts und kurze, kontrolliert abbrechbare Container-Kommandos verwendet werden.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="dag-beispiele"><a class="header" href="#dag-beispiele">DAG-Beispiele</a></h1>
+<h2 id="mesosexecutor-1"><a class="header" href="#mesosexecutor-1">MesosExecutor</a></h2>
+<p>Mit dem Executor werden normale Airflow-Tasks über Mesos verteilt. Die konkrete DAG-Task benötigt keine spezielle Operator-Klasse:</p>
+<pre><code class="language-python">from datetime import datetime
+from airflow import DAG
+from airflow.providers.standard.operators.bash import BashOperator
+
+with DAG("executor_example", schedule=None, start_date=datetime(2024, 1, 1), catchup=False) as dag:
+    BashOperator(
+        task_id="show_date",
+        bash_command="date",
+        executor_config={
+            "cpus": 0.2,
+            "mem_limit": "256m",
+            "attributes": ["airflow:true"],
+        },
+    )
+</code></pre>
+<h2 id="mesosoperator-2"><a class="header" href="#mesosoperator-2">MesosOperator</a></h2>
+<p>Für genau einen Container-Task:</p>
+<pre><code class="language-python">from datetime import datetime
+from airflow import DAG
+from avmesos_airflow_provider.operators.mesos import MesosOperator
+
+with DAG("operator_example", schedule=None, start_date=datetime(2024, 1, 1), catchup=False) as dag:
+    run = MesosOperator(
+        task_id="run_command",
+        image="alpine:3.20",
+        command=["/bin/sh", "-c", "echo operator-ok &amp;&amp; uname -a"],
+        cpus=0.1,
+        mem_limit="128m",
+        environment={"EXAMPLE_MODE": "true"},
+        attributes=["airflow:true"],
+    )
+</code></pre>
+<p>Ein vollständiges, bewusst kurzes Test-DAG liegt unter <code>docs/examples/dags/mesos_operator_test.py</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="entwicklung-und-tests"><a class="header" href="#entwicklung-und-tests">Entwicklung und Tests</a></h1>
+<h2 id="nix-umgebung"><a class="header" href="#nix-umgebung">Nix-Umgebung</a></h2>
+<p>Die Datei <code>shell.nix</code> stellt Python, Airflow, PostgreSQL und die Provider-Abhängigkeiten bereit:</p>
+<pre><code class="language-bash">nix-shell
+</code></pre>
+<p>Der Shell-Hook erstellt eine virtuelle Umgebung unter <code>/tmp/python-dev</code>, richtet die lokale Airflow-Datenbank ein und installiert den Provider editable.</p>
+<h2 id="unit-tests"><a class="header" href="#unit-tests">Unit-Tests</a></h2>
+<p>Die Unit-Tests verwenden synthetische HTTP-Antworten und benötigen keinen Mesos- oder Airflow-Live-Dienst:</p>
+<pre><code class="language-bash">make test
+</code></pre>
+<p>Der Test-Target nutzt:</p>
+<pre><code class="language-bash">python3 -m unittest discover -s tests -v
+</code></pre>
+<h2 id="build"><a class="header" href="#build">Build</a></h2>
+<pre><code class="language-bash">make build
+</code></pre>
+<p>Damit werden Source-Distribution und Wheel erzeugt. Vor dem Commit sollten mindestens <code>make test</code>, <code>make build</code> und <code>git diff --check</code> ausgeführt werden.</p>
+<h2 id="live-smoke-test"><a class="header" href="#live-smoke-test">Live-Smoke-Test</a></h2>
+<p>Für eine echte Integration kann das Test-DAG in Airflow geladen und manuell gestartet werden. Voraussetzungen sind ein laufender Airflow-Scheduler mit <code>MesosExecutor</code>, eine erreichbare Executor-API auf Port 11000 und ein Mesos-Cluster mit passenden Agent-Attributen.</p>
+<p>Die Mesos-Master-UI auf Port 5050 ist nur zur Beobachtung geeignet. Der Operator spricht nicht direkt mit der Master-UI.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="fehlerbehebung"><a class="header" href="#fehlerbehebung">Fehlerbehebung</a></h1>
+<h2 id="operator-bleibt-im-polling"><a class="header" href="#operator-bleibt-im-polling">Operator bleibt im Polling</a></h2>
+<p>Prüfen:</p>
+<ol>
+<li>Läuft der Airflow-Scheduler mit <code>MesosExecutor</code>?</li>
+<li>Ist <code>airflow_scheduler_url</code> korrekt und auf Port 11000 erreichbar?</li>
+<li>Ist das Framework im Mesos-Master registriert?</li>
+<li>Gibt es passende CPU-, Speicher- und Attribut-Offers?</li>
+</ol>
+<p>Die Executor-API meldet <code>HTTP 200</code> beim Queueing nur für die Annahme in die Warteschlange. Der Operator wartet danach weiter auf den Mesos-Status.</p>
+<h2 id="task_failed-oder-task_error"><a class="header" href="#task_failed-oder-task_error"><code>TASK_FAILED</code> oder <code>TASK_ERROR</code></a></h2>
+<p>Mesos-Agent-Logs und die Task-Details in der Mesos-UI prüfen. Häufige Ursachen sind ein nicht verfügbares Image, fehlende Ressourcen, nicht passende Attribute oder ein falscher Container-/Netzwerkmodus.</p>
+<h2 id="task_lost"><a class="header" href="#task_lost"><code>TASK_LOST</code></a></h2>
+<p>Der Agent oder die Framework-Verbindung ist verloren gegangen. Prüfen, ob das Framework neu verbunden ist und ob der Agent aktiv ist.</p>
+<h2 id="api-antwortet-mit-401"><a class="header" href="#api-antwortet-mit-401">API antwortet mit 401</a></h2>
+<p>Die API-Konfiguration und der verwendete Endpunkt prüfen. <code>/v0/dags</code> ist geschützt; der Operator verwendet <code>/v0/queue_command</code> und <code>/v0/task/&lt;task_id&gt;</code>. Die API sollte nicht über einen öffentlichen Reverse Proxy ohne passende Authentifizierung veröffentlicht werden.</p>
+<h2 id="dag-wird-nicht-geladen"><a class="header" href="#dag-wird-nicht-geladen">DAG wird nicht geladen</a></h2>
+<p>Zuerst den Import isoliert prüfen:</p>
+<pre><code class="language-bash">airflow dags list-import-errors
+</code></pre>
+<p>Danach sicherstellen, dass <code>dags_folder</code> auf das Verzeichnis mit der DAG-Datei zeigt und dass der Provider in derselben Python-Umgebung installiert ist wie Airflow.</p>
+<h2 id="ressourcen-passen-nicht"><a class="header" href="#ressourcen-passen-nicht">Ressourcen passen nicht</a></h2>
+<p><code>cpus</code>, <code>mem_limit</code> und <code>disk</code> müssen zu den freien Mesos-Offers passen. Bei Attributen muss mindestens ein aktiver Agent alle Bedingungen erfüllen. Globale Attribute aus <code>mesos_attributes</code> und task-spezifische Attribute werden zusammen verwendet.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="executor-api"><a class="header" href="#executor-api">Executor-API</a></h1>
+<p>Die API wird vom <code>MesosExecutor</code> im Airflow-Scheduler bereitgestellt. Standardadresse ist <code>http://localhost:11000</code>.</p>
+<h2 id="post-v0queue_command"><a class="header" href="#post-v0queue_command">POST <code>/v0/queue_command</code></a></h2>
+<p>Reiht einen direkten Container-Task ein.</p>
+<p>Beispielkörper:</p>
+<pre><code class="language-json">{
+  "airflow_task_id": "airflow.example.hello",
+  "container_type": "DOCKER",
+  "command": ["/bin/sh", "-c", "echo hello"],
+  "image": "alpine:3.20",
+  "cpus": 0.1,
+  "mem_limit": "128m",
+  "attributes": ["airflow:true"],
+  "environment": {"MODE": "test"}
 }
-
-with DAG('docker_dag2', default_args=default_args, schedule_interval=&quot;*/10 * * * * &quot;, catchup=True, start_date=datetime.now()) as dag:
-        t2 = DockerOperator(
-                task_id='docker_command',
-                image='centos:latest',
-                api_version='auto',
-                auto_remove=False,
-                command=&quot;/bin/sleep 600&quot;,
-                docker_url='unix:///var/run/docker.sock'
-                executor_config={
-                        &quot;MesosExecutor&quot;: {
-                                &quot;cpus&quot;: 2.0,
-                                &quot;mem_limit&quot;: 2048
-                        }
-                }         
-        )
-
-        t2
 </code></pre>
+<p>Eine erfolgreiche Annahme liefert HTTP 200. Das bedeutet nur, dass der Auftrag in die Executor-Warteschlange übernommen wurde; die Mesos-Ausführung ist zu diesem Zeitpunkt noch nicht abgeschlossen.</p>
+<h2 id="get-v0tasktask_id"><a class="header" href="#get-v0tasktask_id">GET <code>/v0/task/&lt;task_id&gt;</code></a></h2>
+<p>Liefert den zuletzt bekannten Mesos-Status des Tasks. Der <code>task_id</code> muss URL-sicher kodiert werden, wenn er Zeichen außerhalb des üblichen Task-ID-Formats enthält.</p>
+<p>Der Operator erwartet ein Objekt mit einem Statusfeld, zum Beispiel:</p>
+<pre><code class="language-json">{
+  "status": {
+    "task_id": {"value": "airflow.example.hello"},
+    "state": "TASK_FINISHED"
+  }
+}
+</code></pre>
+<p>Während der Ausführung können <code>TASK_STAGING</code>, <code>TASK_STARTING</code> und <code>TASK_RUNNING</code> auftreten. Terminale Fehlerzustände werden vom Operator in einen Airflow-Task-Fehler übersetzt.</p>
+<h2 id="sicherheit"><a class="header" href="#sicherheit">Sicherheit</a></h2>
+<p>Die API sollte nur auf dem internen Airflow-/Scheduler-Netzwerk erreichbar sein. Zugangsdaten gehören in Airflow-Konfiguration oder Secret-Backends und nicht in versionierte DAGs. Die Mesos-Authentifizierung gegenüber dem Cluster wird separat über die <code>[mesos]</code>-Konfiguration gesteuert.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
             </nav>
 
         </div>
 
-        <script type="text/javascript">
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
-        <script type="text/javascript">
+
+        <script>
         window.addEventListener('load', function() {
             window.setTimeout(window.print, 100);
         });
         </script>
+
+
+    </div>
     </body>
 </html>

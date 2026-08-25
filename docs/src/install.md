@@ -1,74 +1,50 @@
-# How to install the AV Mesos Airflow Provider
+# Installation
 
-To install the Mesos Airflow Provider, you have to to the following steps:
-
-1. Install the provider
+## Paketinstallation
 
 ```bash
 pip install avmesos_airflow_provider
 ```
 
-2. Configure Airflow to use the new executor
+Der Provider benötigt außerdem eine kompatible Airflow-, `avmesos`- und HTTP-Umgebung. Für lokale Entwicklung stellt `shell.nix` eine reproduzierbare Umgebung bereit.
 
-```bash
-vim airflow.cfg
+## Airflow konfigurieren
 
+Für die Ausführung normaler Airflow-Tasks über Mesos:
+
+```ini
 [core]
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
-
-[mesos]
-mesos_ssl = False
-master = leader.mesos:5050
-framework_name = Airflow
-checkpoint = True
-failover_timeout = 604800
-command_shell = True
-task_cpu = 1
-task_memory = 20000
-authenticate = True
-default_principal = <MESOS USER>
-default_secret = <MESOS PASSWORD>
-docker_image_slave = <AIRFLOW DOCKER IMAGE>
-docker_volume_driver = local
-docker_volume_dag_name = airflowdags
-docker_volume_dag_container_path = /home/airflow/airflow/dags/
-docker_sock = /var/run/docker.sock
-docker_volume_logs_name = airflowlogs
-docker_volume_logs_container_path = /home/airflow/airflow/logs/
-docker_environment = '{ "name":"<KEY>", "value":"<VALUE>" }, { ... },' // << do not forget the comma at the end.
-api_username = user
-api_password = password
 ```
 
-## DAG example with mesos executor
+Die vollständige Beispielkonfiguration steht in [Konfiguration](configuration.md).
 
+## Lokale Entwicklung
+
+```bash
+nix-shell
+```
+
+Die Nix-Shell installiert Airflow, `avmesos`, den Provider und PostgreSQL. Sie richtet außerdem die lokale Airflow-Datenbank und die DAG-Umgebung ein.
+
+## MesosOperator verwenden
+
+Der Operator benötigt keinen zweiten Executor. Der Airflow-Scheduler mit `MesosExecutor` stellt die interne API auf Port `11000` bereit. Ein Minimalbeispiel:
 
 ```python
+from datetime import datetime
+
 from airflow import DAG
-from datetime import datetime, timedelta
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.providers.docker.operators.docker import DockerOperator
-from airflow.operators.python import PythonOperator
+from avmesos_airflow_provider.operators.mesos import MesosOperator
 
-default_args = {
-        'owner'                 : 'airflow',
-        'description'           : 'Use of the DockerOperator',
-        'depend_on_past'        : True,
-}
-
-with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * * * ", catchup=True, start_date=datetime.now()) as dag:
-        t2 = DockerOperator(
-                task_id='docker_command',
-                image='centos:latest',
-                api_version='auto',
-                auto_remove=False,
-                command="/bin/sleep 600",
-                docker_url='unix:///var/run/docker.sock'
-                executor_config={
-                       "cpus": 2.0,
-                       "mem_limit": 2048
-                }         
-        )
-
-        t2
+with DAG("hello_mesos", schedule=None, start_date=datetime(2024, 1, 1), catchup=False) as dag:
+    MesosOperator(
+        task_id="hello",
+        image="alpine:3.20",
+        command="echo hello",
+        cpus=0.1,
+        mem_limit="128m",
+    )
 ```
+
+Details befinden sich in der [Operator-Referenz](operator.md).

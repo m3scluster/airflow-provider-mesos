@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Übersicht - Airflow Mesos Provider</title>
+        <title>Executor-API - Airflow Mesos Provider</title>
 
 
         <!-- Custom HTML head -->
@@ -174,44 +174,45 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="airflow-mesos-provider"><a class="header" href="#airflow-mesos-provider">Airflow Mesos Provider</a></h1>
-<p>Der Airflow Mesos Provider integriert Apache Airflow mit Apache Mesos.</p>
-<p>Er bietet zwei Ausführungsmodelle:</p>
-<ul>
-<li><strong>MesosExecutor:</strong> verteilt normale Airflow-Task-Workloads über ein Mesos-Framework.</li>
-<li><strong>MesosOperator:</strong> startet einen einzelnen DAG-Task als Mesos-Container und wartet auf dessen Abschluss.</li>
-</ul>
-<h2 id="schnellstart"><a class="header" href="#schnellstart">Schnellstart</a></h2>
-<ol>
-<li>Provider installieren und Airflow konfigurieren: <a href="install.html">Installation</a></li>
-<li>Architektur und Zuständigkeiten verstehen: <a href="architecture.html">Architektur</a></li>
-<li>Für einzelne Container-Tasks den <a href="operator.html">MesosOperator</a> verwenden.</li>
-<li>Für vollständige Beispiele <a href="examples.html">DAG-Beispiele</a> lesen.</li>
-<li>Mit <a href="testing.html">Tests und Entwicklung</a> verifizieren.</li>
-</ol>
-<h2 id="voraussetzungen"><a class="header" href="#voraussetzungen">Voraussetzungen</a></h2>
-<ul>
-<li>Apache Airflow 3.x empfohlen; der Provider deklariert Airflow <code>&gt;=2.0</code>.</li>
-<li>Apache Mesos 1.6 oder neuer.</li>
-<li>Python 3.x.</li>
-<li>Für Docker-Container: ein Mesos-Agent mit aktivem Docker-Containerizer und Zugriff auf das gewünschte Image.</li>
-</ul>
-<p>SSL und Mesos-Authentifizierung sind optional, werden für produktive Cluster aber empfohlen.</p>
-<h2 id="weitere-dokumentation"><a class="header" href="#weitere-dokumentation">Weitere Dokumentation</a></h2>
-<ul>
-<li><a href="configuration.html">Konfiguration</a></li>
-<li><a href="api.html">Executor-API</a></li>
-<li><a href="troubleshooting.html">Fehlerbehebung</a></li>
-</ul>
+                        <h1 id="executor-api"><a class="header" href="#executor-api">Executor-API</a></h1>
+<p>Die API wird vom <code>MesosExecutor</code> im Airflow-Scheduler bereitgestellt. Standardadresse ist <code>http://localhost:11000</code>.</p>
+<h2 id="post-v0queue_command"><a class="header" href="#post-v0queue_command">POST <code>/v0/queue_command</code></a></h2>
+<p>Reiht einen direkten Container-Task ein.</p>
+<p>Beispielkörper:</p>
+<pre><code class="language-json">{
+  "airflow_task_id": "airflow.example.hello",
+  "container_type": "DOCKER",
+  "command": ["/bin/sh", "-c", "echo hello"],
+  "image": "alpine:3.20",
+  "cpus": 0.1,
+  "mem_limit": "128m",
+  "attributes": ["airflow:true"],
+  "environment": {"MODE": "test"}
+}
+</code></pre>
+<p>Eine erfolgreiche Annahme liefert HTTP 200. Das bedeutet nur, dass der Auftrag in die Executor-Warteschlange übernommen wurde; die Mesos-Ausführung ist zu diesem Zeitpunkt noch nicht abgeschlossen.</p>
+<h2 id="get-v0tasktask_id"><a class="header" href="#get-v0tasktask_id">GET <code>/v0/task/&lt;task_id&gt;</code></a></h2>
+<p>Liefert den zuletzt bekannten Mesos-Status des Tasks. Der <code>task_id</code> muss URL-sicher kodiert werden, wenn er Zeichen außerhalb des üblichen Task-ID-Formats enthält.</p>
+<p>Der Operator erwartet ein Objekt mit einem Statusfeld, zum Beispiel:</p>
+<pre><code class="language-json">{
+  "status": {
+    "task_id": {"value": "airflow.example.hello"},
+    "state": "TASK_FINISHED"
+  }
+}
+</code></pre>
+<p>Während der Ausführung können <code>TASK_STAGING</code>, <code>TASK_STARTING</code> und <code>TASK_RUNNING</code> auftreten. Terminale Fehlerzustände werden vom Operator in einen Airflow-Task-Fehler übersetzt.</p>
+<h2 id="sicherheit"><a class="header" href="#sicherheit">Sicherheit</a></h2>
+<p>Die API sollte nur auf dem internen Airflow-/Scheduler-Netzwerk erreichbar sein. Zugangsdaten gehören in Airflow-Konfiguration oder Secret-Backends und nicht in versionierte DAGs. Die Mesos-Authentifizierung gegenüber dem Cluster wird separat über die <code>[mesos]</code>-Konfiguration gesteuert.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-
-                            <a rel="next prefetch" href="install.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            <a rel="prev" href="troubleshooting.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
+
 
                         <div style="clear: both"></div>
                     </nav>
@@ -219,10 +220,10 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-
-                    <a rel="next prefetch" href="install.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    <a rel="prev" href="troubleshooting.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
+
             </nav>
 
         </div>
