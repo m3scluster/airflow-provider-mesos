@@ -2,7 +2,7 @@
 
 #vars
 
-.PHONY: help build test bootstrap all
+.PHONY: help build test docs deploy bootstrap all
 
 help:
 	@echo "Makefile arguments:"
@@ -37,6 +37,9 @@ install-dev:
 docs:
 	@echo ">>>> Build docs"
 	$(MAKE) -C $@
+
+deploy:
+	@$(MAKE) -C docs deploy
 
 schedule:
 	@nohup airflow scheduler 2>&1>/dev/null &
