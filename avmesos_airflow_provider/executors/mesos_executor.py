@@ -286,7 +286,9 @@ class AirflowMesosScheduler(MesosClient):
             # set the airflow_task_id as executor config
             executor_config["airflow_task_id"] = airflow_task_id
 
-            if hasattr(key, 'execution_date'):
+            if key is None:
+                name = airflow_task_id
+            elif hasattr(key, 'execution_date'):
                 name = key.dag_id + "_" + key.task_id + "_" + str(key.execution_date.date()) + ":" + str(key.execution_date.time())
             else:
                 name = key.dag_id + "_" + key.task_id
@@ -434,8 +436,8 @@ class AirflowMesosScheduler(MesosClient):
                     ],
                     "docker": {
                         "image": image,
-                        "network": self.mesos_docker_network_mode.upper(),
-                        "force_pull_image": "true",
+                        "network": str(executor_config.get("network_mode", self.mesos_docker_network_mode)).upper(),
+                        "force_pull_image": str(executor_config.get("force_pull", True)).lower(),
                         "privileged": "true",
                         "parameters": [
                             {
@@ -455,7 +457,7 @@ class AirflowMesosScheduler(MesosClient):
             self.log.info(json.dumps(task, indent=4))
 
             # fetch dags from uri
-            if len(self.mesos_fetch_uri) > 0:
+            if len(self.mesos_fetch_uri) > 0 and "dag_filename" in executor_config:
                 sand_box_env = {
                     "name": "AIRFLOW__CORE__DAGS_FOLDER",
                     "value": "/mnt/mesos/sandbox",
@@ -479,6 +481,14 @@ class AirflowMesosScheduler(MesosClient):
                 while i < len_task:
                     task["command"]["environment"]["variables"].append(docker_env[i])
                     i += 1
+
+            # Operator-specific environment variables are sent as Mesos
+            # command environment entries, matching DockerOperator semantics.
+            for env_name, env_value in executor_config.get("environment", {}).items():
+                task["command"]["environment"]["variables"].append({
+                    "name": str(env_name),
+                    "value": str(env_value),
+                })
 
             # if the container would be UCR, we can attach tty
             if container_type == "MESOS":
@@ -519,13 +529,23 @@ class AirflowMesosScheduler(MesosClient):
 
         key = self.task_key_map[task_id]
 
-        if task_state == "TASK_RUNNING":
+        if task_state in ("TASK_STAGING", "TASK_STARTING", "TASK_RUNNING"):
             self.log.info("Task Running: %s", task_id)
-            self.result_queue.put((key, State.RUNNING))
+            if key is not None:
+                self.result_queue.put((key, State.RUNNING))
             self.tasks[task_id] = update
             return
 
+        if task_state == "TASK_FINISHED":
+            self.tasks[task_id] = update
+            if key is not None:
+                self.result_queue.put((key, State.SUCCESS))
+            return
+
         if task_state in ("TASK_KILLED", "TASK_FAILED", "TASK_ERROR"):
+            self.tasks[task_id] = update
+            if key is None:
+                return
             self.result_queue.put((key, State.FAILED))
             del self.task_restart[task_id]
             self.cleanupQueues(task_id)
@@ -533,13 +553,16 @@ class AirflowMesosScheduler(MesosClient):
 
         if task_state in ("TASK_LOST"):
             if self.task_restart[task_id] <= 3:
-                self.result_queue.put((key, State.NONE))
+                if key is not None:
+                    self.result_queue.put((key, State.NONE))
                 self.task_restart[task_id] += 1
             else:
-                self.result_queue.put((key, State.FAILED))
+                if key is not None:
+                    self.result_queue.put((key, State.FAILED))
                 del self.task_restart[task_id]
 
-            self.cleanupQueues(task_id)
+            if key is not None:
+                self.cleanupQueues(task_id)
 
 
     def get_task_info(self, task_id):

@@ -2,7 +2,7 @@
 
 #vars
 
-.PHONY: help build bootstrap all
+.PHONY: help build test bootstrap all
 
 help:
 	@echo "Makefile arguments:"
@@ -18,6 +18,10 @@ help:
 build:	
 	@echo ">>>> Build python module"
 	@python3 setup.py sdist bdist_wheel	
+
+test:
+	@echo ">>>> Run unit tests"
+	@python3 -m unittest discover -s tests -v
 
 upload:
 	@python3 -m twine upload --repository pypi dist/*

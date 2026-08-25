@@ -7,7 +7,7 @@
 This provider for Apache Airflow contain the following features:
 
 - MesosExecuter - A scheduler to run Airflow DAG's on mesos
-- MesosOperator - To executer Airflow tasks on mesos. (TODO)
+- MesosOperator - To execute individual Airflow tasks on Mesos.
 
 
 ## Issues
@@ -94,6 +94,29 @@ with DAG('docker_dag2', default_args=default_args, schedule_interval="*/10 * * *
         )
 
         t2
+```
+
+## Using MesosOperator
+
+`MesosOperator` is modelled after `DockerOperator`, but submits one container
+task to the Mesos executor framework API and waits for its terminal Mesos
+status. The executor API listens on port `11000` by default; override it with
+`mesos.operator_api_url` or the operator's `airflow_scheduler_url`.
+
+```python
+from datetime import datetime
+from airflow import DAG
+from avmesos_airflow_provider.operators.mesos import MesosOperator
+
+with DAG("mesos_operator", schedule=None, start_date=datetime(2024, 1, 1), catchup=False) as dag:
+    MesosOperator(
+        task_id="hello",
+        image="alpine:3.20",
+        command="echo hello from Mesos",
+        cpus=0.1,
+        mem_limit="128m",
+        attributes=["airflow:true"],
+    )
 ```
 
 ## Using Mesos attributes

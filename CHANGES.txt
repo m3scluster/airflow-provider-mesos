@@ -1,5 +1,12 @@
 ## Changelog
 
+## master
+
+- Add: MesosOperator for running individual Airflow tasks as Mesos container tasks.
+- Add: MesosOperator integration test DAG and unit tests.
+- Fix: Mesos executor API task status handling for direct operator submissions.
+- Fix: Mesos operator configuration and local Airflow Nix-shell database/master settings.
+
 ## v0.3.1
 
 - Fix: Wrong Type of attributes list
