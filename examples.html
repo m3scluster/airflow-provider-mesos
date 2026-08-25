@@ -1,9 +1,9 @@
 <!DOCTYPE HTML>
-<html lang="de" class="light sidebar-visible" dir="ltr">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>DAG-Beispiele - Airflow Mesos Provider</title>
+        <title>DAG examples - Airflow Mesos Provider</title>
 
 
         <!-- Custom HTML head -->
@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-2c0a9a8d.js";
+            window.path_to_searchindex_js = "searchindex-c65fa113.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-95e1e8ba.js"></script>
+        <script src="toc-d14b852d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -174,9 +174,9 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="dag-beispiele"><a class="header" href="#dag-beispiele">DAG-Beispiele</a></h1>
+                        <h1 id="dag-examples"><a class="header" href="#dag-examples">DAG examples</a></h1>
 <h2 id="mesosexecutor"><a class="header" href="#mesosexecutor">MesosExecutor</a></h2>
-<p>Mit dem Executor werden normale Airflow-Tasks über Mesos verteilt. Die konkrete DAG-Task benötigt keine spezielle Operator-Klasse:</p>
+<p>The executor distributes regular Airflow tasks through Mesos. The DAG task itself does not need a special operator class:</p>
 <pre><code class="language-python">from datetime import datetime
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
@@ -193,7 +193,7 @@ with DAG("executor_example", schedule=None, start_date=datetime(2024, 1, 1), cat
     )
 </code></pre>
 <h2 id="mesosoperator"><a class="header" href="#mesosoperator">MesosOperator</a></h2>
-<p>Für genau einen Container-Task:</p>
+<p>For one container task:</p>
 <pre><code class="language-python">from datetime import datetime
 from airflow import DAG
 from avmesos_airflow_provider.operators.mesos import MesosOperator
@@ -209,7 +209,7 @@ with DAG("operator_example", schedule=None, start_date=datetime(2024, 1, 1), cat
         attributes=["airflow:true"],
     )
 </code></pre>
-<p>Ein vollständiges, bewusst kurzes Test-DAG liegt unter <code>docs/examples/dags/mesos_operator_test.py</code>.</p>
+<p>A complete, intentionally short test DAG is available at <code>docs/examples/dags/mesos_operator_test.py</code>.</p>
 
                     </main>
 

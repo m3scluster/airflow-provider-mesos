@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="de" class="light sidebar-visible" dir="ltr">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-2c0a9a8d.js";
+            window.path_to_searchindex_js = "searchindex-c65fa113.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-95e1e8ba.js"></script>
+        <script src="toc-d14b852d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -176,52 +176,52 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="airflow-mesos-provider"><a class="header" href="#airflow-mesos-provider">Airflow Mesos Provider</a></h1>
-<p>Der Airflow Mesos Provider integriert Apache Airflow mit Apache Mesos.</p>
-<p>Er bietet zwei Ausführungsmodelle:</p>
+<p>The Airflow Mesos Provider integrates Apache Airflow with Apache Mesos.</p>
+<p>It provides two execution models:</p>
 <ul>
-<li><strong>MesosExecutor:</strong> verteilt normale Airflow-Task-Workloads über ein Mesos-Framework.</li>
-<li><strong>MesosOperator:</strong> startet einen einzelnen DAG-Task als Mesos-Container und wartet auf dessen Abschluss.</li>
+<li><strong>MesosExecutor:</strong> distributes regular Airflow task workloads through a Mesos framework.</li>
+<li><strong>MesosOperator:</strong> starts a single DAG task as a Mesos container and waits for it to finish.</li>
 </ul>
-<h2 id="schnellstart"><a class="header" href="#schnellstart">Schnellstart</a></h2>
+<h2 id="quick-start"><a class="header" href="#quick-start">Quick start</a></h2>
 <ol>
-<li>Provider installieren und Airflow konfigurieren: <a href="#installation">Installation</a></li>
-<li>Architektur und Zuständigkeiten verstehen: <a href="#architektur">Architektur</a></li>
-<li>Für einzelne Container-Tasks den <a href="#mesosoperator-1">MesosOperator</a> verwenden.</li>
-<li>Für vollständige Beispiele <a href="#dag-beispiele">DAG-Beispiele</a> lesen.</li>
-<li>Mit <a href="#entwicklung-und-tests">Tests und Entwicklung</a> verifizieren.</li>
+<li>Install the provider and configure Airflow: <a href="#installation">Installation</a></li>
+<li>Understand the responsibilities and data flow: <a href="#architecture">Architecture</a></li>
+<li>Use the <a href="#mesosoperator-1">MesosOperator</a> for individual container tasks.</li>
+<li>Read the <a href="#dag-examples">DAG examples</a> for complete examples.</li>
+<li>Verify the setup with <a href="#development-and-testing">Testing and development</a>.</li>
 </ol>
-<h2 id="voraussetzungen"><a class="header" href="#voraussetzungen">Voraussetzungen</a></h2>
+<h2 id="requirements"><a class="header" href="#requirements">Requirements</a></h2>
 <ul>
-<li>Apache Airflow 3.x empfohlen; der Provider deklariert Airflow <code>&gt;=2.0</code>.</li>
-<li>Apache Mesos 1.6 oder neuer.</li>
+<li>Apache Airflow 3.x recommended; the provider declares Airflow <code>&gt;=2.0</code>.</li>
+<li>Apache Mesos 1.6 or newer.</li>
 <li>Python 3.x.</li>
-<li>Für Docker-Container: ein Mesos-Agent mit aktivem Docker-Containerizer und Zugriff auf das gewünschte Image.</li>
+<li>For Docker containers: a Mesos agent with the Docker containerizer enabled and access to the required image.</li>
 </ul>
-<p>SSL und Mesos-Authentifizierung sind optional, werden für produktive Cluster aber empfohlen.</p>
-<h2 id="weitere-dokumentation"><a class="header" href="#weitere-dokumentation">Weitere Dokumentation</a></h2>
+<p>SSL and Mesos authentication are optional, but recommended for production clusters.</p>
+<h2 id="further-documentation"><a class="header" href="#further-documentation">Further documentation</a></h2>
 <ul>
-<li><a href="#konfiguration">Konfiguration</a></li>
-<li><a href="#executor-api">Executor-API</a></li>
-<li><a href="#fehlerbehebung">Fehlerbehebung</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#executor-api">Executor API</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
-<h2 id="paketinstallation"><a class="header" href="#paketinstallation">Paketinstallation</a></h2>
+<h2 id="package-installation"><a class="header" href="#package-installation">Package installation</a></h2>
 <pre><code class="language-bash">pip install avmesos_airflow_provider
 </code></pre>
-<p>Der Provider benötigt außerdem eine kompatible Airflow-, <code>avmesos</code>- und HTTP-Umgebung. Für lokale Entwicklung stellt <code>shell.nix</code> eine reproduzierbare Umgebung bereit.</p>
-<h2 id="airflow-konfigurieren"><a class="header" href="#airflow-konfigurieren">Airflow konfigurieren</a></h2>
-<p>Für die Ausführung normaler Airflow-Tasks über Mesos:</p>
+<p>The provider also requires a compatible Airflow, <code>avmesos</code>, and HTTP environment. For local development, <code>shell.nix</code> provides a reproducible environment.</p>
+<h2 id="configure-airflow"><a class="header" href="#configure-airflow">Configure Airflow</a></h2>
+<p>To run regular Airflow tasks through Mesos:</p>
 <pre><code class="language-ini">[core]
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
 </code></pre>
-<p>Die vollständige Beispielkonfiguration steht in <a href="#konfiguration">Konfiguration</a>.</p>
-<h2 id="lokale-entwicklung"><a class="header" href="#lokale-entwicklung">Lokale Entwicklung</a></h2>
+<p>The complete example configuration is available in <a href="#configuration">Configuration</a>.</p>
+<h2 id="local-development"><a class="header" href="#local-development">Local development</a></h2>
 <pre><code class="language-bash">nix-shell
 </code></pre>
-<p>Die Nix-Shell installiert Airflow, <code>avmesos</code>, den Provider und PostgreSQL. Sie richtet außerdem die lokale Airflow-Datenbank und die DAG-Umgebung ein.</p>
-<h2 id="mesosoperator-verwenden"><a class="header" href="#mesosoperator-verwenden">MesosOperator verwenden</a></h2>
-<p>Der Operator benötigt keinen zweiten Executor. Der Airflow-Scheduler mit <code>MesosExecutor</code> stellt die interne API auf Port <code>11000</code> bereit. Ein Minimalbeispiel:</p>
+<p>The Nix shell installs Airflow, <code>avmesos</code>, the provider, and PostgreSQL. It also initializes the local Airflow database and DAG environment.</p>
+<h2 id="use-mesosoperator"><a class="header" href="#use-mesosoperator">Use MesosOperator</a></h2>
+<p>The operator does not require a second executor. The Airflow scheduler with <code>MesosExecutor</code> exposes the internal API on port <code>11000</code>. A minimal example:</p>
 <pre><code class="language-python">from datetime import datetime
 
 from airflow import DAG
@@ -236,24 +236,24 @@ with DAG("hello_mesos", schedule=None, start_date=datetime(2024, 1, 1), catchup=
         mem_limit="128m",
     )
 </code></pre>
-<p>Details befinden sich in der <a href="#mesosoperator-1">Operator-Referenz</a>.</p>
+<p>See the <a href="#mesosoperator-1">Operator reference</a> for details.</p>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="architektur"><a class="header" href="#architektur">Architektur</a></h1>
-<p>Der Provider stellt zwei unterschiedliche Ausführungswege bereit:</p>
+<h1 id="architecture"><a class="header" href="#architecture">Architecture</a></h1>
+<p>The provider offers two distinct execution paths:</p>
 <h2 id="mesosexecutor"><a class="header" href="#mesosexecutor">MesosExecutor</a></h2>
-<p><code>MesosExecutor</code> ersetzt den Airflow-Executor. Airflow übergibt eingeplante Task-Workloads an ein Mesos-Framework. Das Framework nimmt Mesos-Offers an und startet daraus Airflow-Tasks als Container-Tasks.</p>
-<p>Dieser Weg eignet sich, wenn ein gesamter Airflow-DAG oder viele normale Airflow-Tasks über Mesos verteilt werden sollen.</p>
+<p><code>MesosExecutor</code> replaces the Airflow executor. Airflow submits scheduled task workloads to a Mesos framework. The framework accepts Mesos offers and starts Airflow tasks as container tasks.</p>
+<p>This path is suitable when an entire Airflow DAG, or many regular Airflow tasks, should be distributed through Mesos.</p>
 <h2 id="mesosoperator"><a class="header" href="#mesosoperator">MesosOperator</a></h2>
-<p><code>MesosOperator</code> läuft innerhalb eines normalen Airflow-DAGs und startet genau einen einzelnen Task als Mesos-Container. Er ist dem <code>DockerOperator</code> nachempfunden, verwendet aber die vom <code>MesosExecutor</code> bereitgestellte lokale API.</p>
-<p>Der Ablauf ist:</p>
+<p><code>MesosOperator</code> runs inside a regular Airflow DAG and starts exactly one task as a Mesos container. It is modeled after <code>DockerOperator</code>, but uses the local API provided by <code>MesosExecutor</code>.</p>
+<p>The flow is:</p>
 <ol>
-<li>Der Operator sendet den Container-Auftrag an <code>POST /v0/queue_command</code>.</li>
-<li>Der MesosExecutor reiht den Auftrag ein und nimmt ein passendes Mesos-Offer an.</li>
-<li>Der Operator fragt <code>GET /v0/task/&lt;task_id&gt;</code> ab.</li>
-<li>Der Operator wartet auf <code>TASK_FINISHED</code> oder meldet einen terminalen Fehler an Airflow.</li>
+<li>The operator sends the container request to <code>POST /v0/queue_command</code>.</li>
+<li>The MesosExecutor queues the request and accepts a matching Mesos offer.</li>
+<li>The operator polls <code>GET /v0/task/&lt;task_id&gt;</code>.</li>
+<li>The operator waits for <code>TASK_FINISHED</code> or reports a terminal failure to Airflow.</li>
 </ol>
-<p>Die API läuft standardmäßig auf <code>http://localhost:11000</code>. Sie wird vom Scheduler-Prozess bereitgestellt und ist nicht die Mesos-Master-API auf Port 5050.</p>
-<h2 id="datenfluss"><a class="header" href="#datenfluss">Datenfluss</a></h2>
+<p>The API runs at <code>http://localhost:11000</code> by default. It is provided by the scheduler process and is not the Mesos master API on port 5050.</p>
+<h2 id="data-flow"><a class="header" href="#data-flow">Data flow</a></h2>
 <pre><code class="language-text">Airflow Scheduler
       |
       | MesosExecutor API :11000
@@ -267,16 +267,16 @@ Mesos Master :5050
       v
 Mesos Agent -&gt; Docker/Mesos Container
 </code></pre>
-<p>Der Operator erzeugt kein eigenes Mesos-Framework. Dadurch bleiben Offer-Verteilung, Ressourcenprüfung und Framework-Authentifizierung zentral im bestehenden Executor.</p>
+<p>The operator does not create its own Mesos framework. Offer distribution, resource checking, and framework authentication therefore remain centralized in the existing executor.</p>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="konfiguration"><a class="header" href="#konfiguration">Konfiguration</a></h1>
-<h2 id="airflow-executor"><a class="header" href="#airflow-executor">Airflow-Executor</a></h2>
-<p>In <code>airflow.cfg</code> wird der Executor aktiviert:</p>
+<h1 id="configuration"><a class="header" href="#configuration">Configuration</a></h1>
+<h2 id="airflow-executor"><a class="header" href="#airflow-executor">Airflow executor</a></h2>
+<p>Enable the executor in <code>airflow.cfg</code>:</p>
 <pre><code class="language-ini">[core]
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
 </code></pre>
-<h2 id="mesos-konfiguration"><a class="header" href="#mesos-konfiguration">Mesos-Konfiguration</a></h2>
-<p>Die Werte sind Beispiele. Hosts, Zugangsdaten und Images müssen an die eigene Umgebung angepasst werden.</p>
+<h2 id="mesos-configuration"><a class="header" href="#mesos-configuration">Mesos configuration</a></h2>
+<p>The values below are examples. Adapt hosts, credentials, and images to your environment.</p>
 <pre><code class="language-ini">[mesos]
 mesos_ssl = True
 master = mesos-master.example.invalid:5050
@@ -308,12 +308,12 @@ api_username = &lt;API_USERNAME&gt;
 api_password = &lt;API_PASSWORD&gt;
 operator_api_url = http://localhost:11000
 </code></pre>
-<p><code>operator_api_url</code> ist die Adresse, die der <code>MesosOperator</code> verwendet, wenn kein <code>airflow_scheduler_url</code> am Task gesetzt ist.</p>
-<h2 id="attribute"><a class="header" href="#attribute">Attribute</a></h2>
-<p>Globale Attribute gelten für Executor-Tasks. Task-spezifische Attribute werden vom Operator beziehungsweise <code>executor_config</code> ergänzt:</p>
+<p><code>operator_api_url</code> is the address used by <code>MesosOperator</code> when no <code>airflow_scheduler_url</code> is set on the task.</p>
+<h2 id="attributes"><a class="header" href="#attributes">Attributes</a></h2>
+<p>Global attributes apply to executor tasks. Task-specific attributes are added by the operator or through <code>executor_config</code>:</p>
 <pre><code class="language-ini">mesos_attributes = ["airflow:true", "gpu:true?:cpu:true"]
 </code></pre>
-<p>Ein Operator kann zusätzlich Folgendes angeben:</p>
+<p>An operator can specify additional attributes:</p>
 <pre><code class="language-python">MesosOperator(
     task_id="cpu_task",
     image="alpine:3.20",
@@ -321,11 +321,11 @@ operator_api_url = http://localhost:11000
     attributes=["cpu:true"],
 )
 </code></pre>
-<p>Keine Secrets oder produktiven Infrastrukturadressen in DAG-Dateien versionieren. Für Umgebungen sollten Airflow Connections, Variables oder externe Secret-Backends verwendet werden.</p>
+<p>Do not commit secrets or production infrastructure addresses in DAG files. Use Airflow Connections, Variables, or external secret backends for environment-specific values.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="mesosoperator-1"><a class="header" href="#mesosoperator-1">MesosOperator</a></h1>
-<p><code>MesosOperator</code> führt einen einzelnen Container-Task unter Apache Mesos aus. Das Verhalten orientiert sich am Airflow <code>DockerOperator</code>, die Ausführung erfolgt jedoch über die MesosExecutor-API.</p>
-<h2 id="beispiel"><a class="header" href="#beispiel">Beispiel</a></h2>
+<p><code>MesosOperator</code> runs one container task under Apache Mesos. Its behavior follows the Airflow <code>DockerOperator</code> model, but execution takes place through the MesosExecutor API.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
 <pre><code class="language-python">from datetime import datetime
 
 from airflow import DAG
@@ -346,49 +346,49 @@ with DAG(
         attributes=["airflow:true"],
     )
 </code></pre>
-<h2 id="parameter"><a class="header" href="#parameter">Parameter</a></h2>
+<h2 id="parameters"><a class="header" href="#parameters">Parameters</a></h2>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Parameter</th><th>Beschreibung</th></tr>
+<tr><th>Parameter</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><code>image</code></td><td>Container-Image; erforderlich.</td></tr>
-<tr><td><code>command</code></td><td>String oder Argumentliste. Strings laufen über <code>/bin/sh -c</code>.</td></tr>
-<tr><td><code>cpus</code></td><td>Angeforderte CPU-Ressourcen.</td></tr>
-<tr><td><code>mem_limit</code></td><td>Angeforderter Speicher, zum Beispiel <code>128m</code> oder eine Zahl. <code>memlimit</code> bleibt als Alias verfügbar.</td></tr>
-<tr><td><code>disk</code></td><td>Angeforderter Mesos-Datenträger.</td></tr>
-<tr><td><code>environment</code></td><td>Dictionary mit Umgebungsvariablen.</td></tr>
-<tr><td><code>attributes</code></td><td>Liste von Mesos-Attributbedingungen.</td></tr>
-<tr><td><code>force_pull</code></td><td>Steuert, ob das Image erneut gezogen werden soll.</td></tr>
-<tr><td><code>network_mode</code></td><td>Docker-Netzwerkmodus.</td></tr>
-<tr><td><code>user</code></td><td>Benutzer im Container.</td></tr>
-<tr><td><code>volumes</code></td><td>Volume-Angaben.</td></tr>
-<tr><td><code>airflow_scheduler_url</code></td><td>URL der Executor-API; Standard ist <code>operator_api_url</code> beziehungsweise <code>http://localhost:11000</code>.</td></tr>
-<tr><td><code>poll_interval</code></td><td>Sekunden zwischen Statusabfragen.</td></tr>
-<tr><td><code>startup_timeout</code></td><td>Maximale Wartezeit in Sekunden.</td></tr>
+<tr><td><code>image</code></td><td>Container image; required.</td></tr>
+<tr><td><code>command</code></td><td>String or argument list. Strings are executed through <code>/bin/sh -c</code>.</td></tr>
+<tr><td><code>cpus</code></td><td>Requested CPU resources.</td></tr>
+<tr><td><code>mem_limit</code></td><td>Requested memory, for example <code>128m</code> or a number. <code>memlimit</code> remains available as an alias.</td></tr>
+<tr><td><code>disk</code></td><td>Requested Mesos disk resources.</td></tr>
+<tr><td><code>environment</code></td><td>Dictionary of environment variables.</td></tr>
+<tr><td><code>attributes</code></td><td>List of Mesos attribute constraints.</td></tr>
+<tr><td><code>force_pull</code></td><td>Controls whether the image should be pulled again.</td></tr>
+<tr><td><code>network_mode</code></td><td>Docker network mode.</td></tr>
+<tr><td><code>user</code></td><td>User inside the container.</td></tr>
+<tr><td><code>volumes</code></td><td>Volume specifications.</td></tr>
+<tr><td><code>airflow_scheduler_url</code></td><td>Executor API URL; defaults to <code>operator_api_url</code> or <code>http://localhost:11000</code>.</td></tr>
+<tr><td><code>poll_interval</code></td><td>Seconds between status requests.</td></tr>
+<tr><td><code>startup_timeout</code></td><td>Maximum wait time in seconds.</td></tr>
 </tbody>
 </table>
 </div>
-<p>Airflow-Standardparameter wie <code>task_id</code>, <code>retries</code>, <code>pool</code> und <code>queue</code> werden über <code>BaseOperator</code> unterstützt.</p>
-<h2 id="statusverhalten"><a class="header" href="#statusverhalten">Statusverhalten</a></h2>
-<p>Der Operator beendet sich erfolgreich bei:</p>
+<p>Airflow standard parameters such as <code>task_id</code>, <code>retries</code>, <code>pool</code>, and <code>queue</code> are supported through <code>BaseOperator</code>.</p>
+<h2 id="status-behavior"><a class="header" href="#status-behavior">Status behavior</a></h2>
+<p>The operator succeeds when the status is:</p>
 <pre><code class="language-text">TASK_FINISHED
 </code></pre>
-<p>Folgende Zustände führen zu <code>AirflowException</code>:</p>
+<p>The following states raise <code>AirflowException</code>:</p>
 <pre><code class="language-text">TASK_FAILED
 TASK_ERROR
 TASK_KILLED
 TASK_LOST
 TASK_UNREACHABLE
 </code></pre>
-<p>HTTP-Fehler, ungültige JSON-Antworten und das Überschreiten von <code>startup_timeout</code> werden ebenfalls als Task-Fehler gemeldet.</p>
-<h2 id="einschränkung-bei-abbruch"><a class="header" href="#einschränkung-bei-abbruch">Einschränkung bei Abbruch</a></h2>
-<p>Die aktuelle Executor-API besitzt keinen separaten Kill-Endpunkt für direkt eingereihte Operator-Tasks. <code>on_kill()</code> protokolliert diese Einschränkung. Für lange Tasks sollten Airflow-Timeouts und kurze, kontrolliert abbrechbare Container-Kommandos verwendet werden.</p>
+<p>HTTP errors, invalid JSON responses, and exceeding <code>startup_timeout</code> are also reported as task failures.</p>
+<h2 id="cancellation-limitation"><a class="header" href="#cancellation-limitation">Cancellation limitation</a></h2>
+<p>The current executor API has no separate kill endpoint for directly queued operator tasks. <code>on_kill()</code> logs this limitation. For long-running tasks, use Airflow timeouts and container commands that can be stopped in a controlled way.</p>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="dag-beispiele"><a class="header" href="#dag-beispiele">DAG-Beispiele</a></h1>
+<h1 id="dag-examples"><a class="header" href="#dag-examples">DAG examples</a></h1>
 <h2 id="mesosexecutor-1"><a class="header" href="#mesosexecutor-1">MesosExecutor</a></h2>
-<p>Mit dem Executor werden normale Airflow-Tasks über Mesos verteilt. Die konkrete DAG-Task benötigt keine spezielle Operator-Klasse:</p>
+<p>The executor distributes regular Airflow tasks through Mesos. The DAG task itself does not need a special operator class:</p>
 <pre><code class="language-python">from datetime import datetime
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
@@ -405,7 +405,7 @@ with DAG("executor_example", schedule=None, start_date=datetime(2024, 1, 1), cat
     )
 </code></pre>
 <h2 id="mesosoperator-2"><a class="header" href="#mesosoperator-2">MesosOperator</a></h2>
-<p>Für genau einen Container-Task:</p>
+<p>For one container task:</p>
 <pre><code class="language-python">from datetime import datetime
 from airflow import DAG
 from avmesos_airflow_provider.operators.mesos import MesosOperator
@@ -421,58 +421,58 @@ with DAG("operator_example", schedule=None, start_date=datetime(2024, 1, 1), cat
         attributes=["airflow:true"],
     )
 </code></pre>
-<p>Ein vollständiges, bewusst kurzes Test-DAG liegt unter <code>docs/examples/dags/mesos_operator_test.py</code>.</p>
+<p>A complete, intentionally short test DAG is available at <code>docs/examples/dags/mesos_operator_test.py</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="entwicklung-und-tests"><a class="header" href="#entwicklung-und-tests">Entwicklung und Tests</a></h1>
-<h2 id="nix-umgebung"><a class="header" href="#nix-umgebung">Nix-Umgebung</a></h2>
-<p>Die Datei <code>shell.nix</code> stellt Python, Airflow, PostgreSQL und die Provider-Abhängigkeiten bereit:</p>
+<h1 id="development-and-testing"><a class="header" href="#development-and-testing">Development and testing</a></h1>
+<h2 id="nix-environment"><a class="header" href="#nix-environment">Nix environment</a></h2>
+<p><code>shell.nix</code> provides Python, Airflow, PostgreSQL, and the provider dependencies:</p>
 <pre><code class="language-bash">nix-shell
 </code></pre>
-<p>Der Shell-Hook erstellt eine virtuelle Umgebung unter <code>/tmp/python-dev</code>, richtet die lokale Airflow-Datenbank ein und installiert den Provider editable.</p>
-<h2 id="unit-tests"><a class="header" href="#unit-tests">Unit-Tests</a></h2>
-<p>Die Unit-Tests verwenden synthetische HTTP-Antworten und benötigen keinen Mesos- oder Airflow-Live-Dienst:</p>
+<p>The shell hook creates a virtual environment under <code>/tmp/python-dev</code>, initializes the local Airflow database, and installs the provider in editable mode.</p>
+<h2 id="unit-tests"><a class="header" href="#unit-tests">Unit tests</a></h2>
+<p>The unit tests use synthetic HTTP responses and do not require a live Mesos or Airflow service:</p>
 <pre><code class="language-bash">make test
 </code></pre>
-<p>Der Test-Target nutzt:</p>
+<p>The test target runs:</p>
 <pre><code class="language-bash">python3 -m unittest discover -s tests -v
 </code></pre>
 <h2 id="build"><a class="header" href="#build">Build</a></h2>
 <pre><code class="language-bash">make build
 </code></pre>
-<p>Damit werden Source-Distribution und Wheel erzeugt. Vor dem Commit sollten mindestens <code>make test</code>, <code>make build</code> und <code>git diff --check</code> ausgeführt werden.</p>
-<h2 id="live-smoke-test"><a class="header" href="#live-smoke-test">Live-Smoke-Test</a></h2>
-<p>Für eine echte Integration kann das Test-DAG in Airflow geladen und manuell gestartet werden. Voraussetzungen sind ein laufender Airflow-Scheduler mit <code>MesosExecutor</code>, eine erreichbare Executor-API auf Port 11000 und ein Mesos-Cluster mit passenden Agent-Attributen.</p>
-<p>Die Mesos-Master-UI auf Port 5050 ist nur zur Beobachtung geeignet. Der Operator spricht nicht direkt mit der Master-UI.</p>
+<p>This creates a source distribution and wheel. Before committing, run at least <code>make test</code>, <code>make build</code>, and <code>git diff --check</code>.</p>
+<h2 id="live-smoke-test"><a class="header" href="#live-smoke-test">Live smoke test</a></h2>
+<p>For a real integration test, load the test DAG into Airflow and trigger it manually. Requirements are a running Airflow scheduler with <code>MesosExecutor</code>, a reachable executor API on port 11000, and a Mesos cluster with matching agent attributes.</p>
+<p>The Mesos master UI on port 5050 is for observation only. The operator does not communicate directly with the master UI.</p>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="fehlerbehebung"><a class="header" href="#fehlerbehebung">Fehlerbehebung</a></h1>
-<h2 id="operator-bleibt-im-polling"><a class="header" href="#operator-bleibt-im-polling">Operator bleibt im Polling</a></h2>
-<p>Prüfen:</p>
+<h1 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h1>
+<h2 id="operator-remains-in-polling"><a class="header" href="#operator-remains-in-polling">Operator remains in polling</a></h2>
+<p>Check the following:</p>
 <ol>
-<li>Läuft der Airflow-Scheduler mit <code>MesosExecutor</code>?</li>
-<li>Ist <code>airflow_scheduler_url</code> korrekt und auf Port 11000 erreichbar?</li>
-<li>Ist das Framework im Mesos-Master registriert?</li>
-<li>Gibt es passende CPU-, Speicher- und Attribut-Offers?</li>
+<li>Is the Airflow scheduler running with <code>MesosExecutor</code>?</li>
+<li>Is <code>airflow_scheduler_url</code> correct and reachable on port 11000?</li>
+<li>Is the framework registered with the Mesos master?</li>
+<li>Are there matching CPU, memory, and attribute offers?</li>
 </ol>
-<p>Die Executor-API meldet <code>HTTP 200</code> beim Queueing nur für die Annahme in die Warteschlange. Der Operator wartet danach weiter auf den Mesos-Status.</p>
-<h2 id="task_failed-oder-task_error"><a class="header" href="#task_failed-oder-task_error"><code>TASK_FAILED</code> oder <code>TASK_ERROR</code></a></h2>
-<p>Mesos-Agent-Logs und die Task-Details in der Mesos-UI prüfen. Häufige Ursachen sind ein nicht verfügbares Image, fehlende Ressourcen, nicht passende Attribute oder ein falscher Container-/Netzwerkmodus.</p>
+<p>The executor API returns <code>HTTP 200</code> during queueing only to confirm acceptance into the queue. The operator then continues waiting for the Mesos status.</p>
+<h2 id="task_failed-or-task_error"><a class="header" href="#task_failed-or-task_error"><code>TASK_FAILED</code> or <code>TASK_ERROR</code></a></h2>
+<p>Check Mesos agent logs and the task details in the Mesos UI. Common causes include an unavailable image, insufficient resources, unmatched attributes, or an incorrect container/network mode.</p>
 <h2 id="task_lost"><a class="header" href="#task_lost"><code>TASK_LOST</code></a></h2>
-<p>Der Agent oder die Framework-Verbindung ist verloren gegangen. Prüfen, ob das Framework neu verbunden ist und ob der Agent aktiv ist.</p>
-<h2 id="api-antwortet-mit-401"><a class="header" href="#api-antwortet-mit-401">API antwortet mit 401</a></h2>
-<p>Die API-Konfiguration und der verwendete Endpunkt prüfen. <code>/v0/dags</code> ist geschützt; der Operator verwendet <code>/v0/queue_command</code> und <code>/v0/task/&lt;task_id&gt;</code>. Die API sollte nicht über einen öffentlichen Reverse Proxy ohne passende Authentifizierung veröffentlicht werden.</p>
-<h2 id="dag-wird-nicht-geladen"><a class="header" href="#dag-wird-nicht-geladen">DAG wird nicht geladen</a></h2>
-<p>Zuerst den Import isoliert prüfen:</p>
+<p>The agent or framework connection was lost. Check whether the framework has reconnected and whether the agent is active.</p>
+<h2 id="api-returns-401"><a class="header" href="#api-returns-401">API returns 401</a></h2>
+<p>Check the API configuration and the endpoint being used. <code>/v0/dags</code> is protected; the operator uses <code>/v0/queue_command</code> and <code>/v0/task/&lt;task_id&gt;</code>. Do not expose the API through a public reverse proxy without suitable authentication.</p>
+<h2 id="dag-is-not-loaded"><a class="header" href="#dag-is-not-loaded">DAG is not loaded</a></h2>
+<p>First check imports in isolation:</p>
 <pre><code class="language-bash">airflow dags list-import-errors
 </code></pre>
-<p>Danach sicherstellen, dass <code>dags_folder</code> auf das Verzeichnis mit der DAG-Datei zeigt und dass der Provider in derselben Python-Umgebung installiert ist wie Airflow.</p>
-<h2 id="ressourcen-passen-nicht"><a class="header" href="#ressourcen-passen-nicht">Ressourcen passen nicht</a></h2>
-<p><code>cpus</code>, <code>mem_limit</code> und <code>disk</code> müssen zu den freien Mesos-Offers passen. Bei Attributen muss mindestens ein aktiver Agent alle Bedingungen erfüllen. Globale Attribute aus <code>mesos_attributes</code> und task-spezifische Attribute werden zusammen verwendet.</p>
+<p>Then make sure <code>dags_folder</code> points to the directory containing the DAG and that the provider is installed in the same Python environment as Airflow.</p>
+<h2 id="resources-do-not-match"><a class="header" href="#resources-do-not-match">Resources do not match</a></h2>
+<p><code>cpus</code>, <code>mem_limit</code>, and <code>disk</code> must fit the available Mesos offers. For attributes, at least one active agent must satisfy every constraint. Global attributes from <code>mesos_attributes</code> and task-specific attributes are used together.</p>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="executor-api"><a class="header" href="#executor-api">Executor-API</a></h1>
-<p>Die API wird vom <code>MesosExecutor</code> im Airflow-Scheduler bereitgestellt. Standardadresse ist <code>http://localhost:11000</code>.</p>
+<h1 id="executor-api"><a class="header" href="#executor-api">Executor API</a></h1>
+<p>The API is provided by <code>MesosExecutor</code> in the Airflow scheduler. The default address is <code>http://localhost:11000</code>.</p>
 <h2 id="post-v0queue_command"><a class="header" href="#post-v0queue_command">POST <code>/v0/queue_command</code></a></h2>
-<p>Reiht einen direkten Container-Task ein.</p>
-<p>Beispielkörper:</p>
+<p>Queues a direct container task.</p>
+<p>Example request body:</p>
 <pre><code class="language-json">{
   "airflow_task_id": "airflow.example.hello",
   "container_type": "DOCKER",
@@ -484,10 +484,10 @@ with DAG("operator_example", schedule=None, start_date=datetime(2024, 1, 1), cat
   "environment": {"MODE": "test"}
 }
 </code></pre>
-<p>Eine erfolgreiche Annahme liefert HTTP 200. Das bedeutet nur, dass der Auftrag in die Executor-Warteschlange übernommen wurde; die Mesos-Ausführung ist zu diesem Zeitpunkt noch nicht abgeschlossen.</p>
+<p>A successful acceptance returns HTTP 200. This only means that the request was accepted into the executor queue; Mesos execution has not necessarily finished yet.</p>
 <h2 id="get-v0tasktask_id"><a class="header" href="#get-v0tasktask_id">GET <code>/v0/task/&lt;task_id&gt;</code></a></h2>
-<p>Liefert den zuletzt bekannten Mesos-Status des Tasks. Der <code>task_id</code> muss URL-sicher kodiert werden, wenn er Zeichen außerhalb des üblichen Task-ID-Formats enthält.</p>
-<p>Der Operator erwartet ein Objekt mit einem Statusfeld, zum Beispiel:</p>
+<p>Returns the latest known Mesos status for the task. The <code>task_id</code> must be URL-encoded if it contains characters outside the usual task ID format.</p>
+<p>The operator expects an object with a status field, for example:</p>
 <pre><code class="language-json">{
   "status": {
     "task_id": {"value": "airflow.example.hello"},
@@ -495,9 +495,9 @@ with DAG("operator_example", schedule=None, start_date=datetime(2024, 1, 1), cat
   }
 }
 </code></pre>
-<p>Während der Ausführung können <code>TASK_STAGING</code>, <code>TASK_STARTING</code> und <code>TASK_RUNNING</code> auftreten. Terminale Fehlerzustände werden vom Operator in einen Airflow-Task-Fehler übersetzt.</p>
-<h2 id="sicherheit"><a class="header" href="#sicherheit">Sicherheit</a></h2>
-<p>Die API sollte nur auf dem internen Airflow-/Scheduler-Netzwerk erreichbar sein. Zugangsdaten gehören in Airflow-Konfiguration oder Secret-Backends und nicht in versionierte DAGs. Die Mesos-Authentifizierung gegenüber dem Cluster wird separat über die <code>[mesos]</code>-Konfiguration gesteuert.</p>
+<p>During execution, <code>TASK_STAGING</code>, <code>TASK_STARTING</code>, and <code>TASK_RUNNING</code> may occur. Terminal failure states are translated into an Airflow task failure by the operator.</p>
+<h2 id="security"><a class="header" href="#security">Security</a></h2>
+<p>The API should only be reachable on the internal Airflow/scheduler network. Store credentials in Airflow configuration or secret backends, not in versioned DAGs. Mesos authentication to the cluster is configured separately through <code>[mesos]</code>.</p>
 
                     </main>
 

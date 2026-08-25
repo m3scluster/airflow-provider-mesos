@@ -1,9 +1,9 @@
 <!DOCTYPE HTML>
-<html lang="de" class="light sidebar-visible" dir="ltr">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Konfiguration - Airflow Mesos Provider</title>
+        <title>Configuration - Airflow Mesos Provider</title>
 
 
         <!-- Custom HTML head -->
@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-2c0a9a8d.js";
+            window.path_to_searchindex_js = "searchindex-c65fa113.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-95e1e8ba.js"></script>
+        <script src="toc-d14b852d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -174,14 +174,14 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="konfiguration"><a class="header" href="#konfiguration">Konfiguration</a></h1>
-<h2 id="airflow-executor"><a class="header" href="#airflow-executor">Airflow-Executor</a></h2>
-<p>In <code>airflow.cfg</code> wird der Executor aktiviert:</p>
+                        <h1 id="configuration"><a class="header" href="#configuration">Configuration</a></h1>
+<h2 id="airflow-executor"><a class="header" href="#airflow-executor">Airflow executor</a></h2>
+<p>Enable the executor in <code>airflow.cfg</code>:</p>
 <pre><code class="language-ini">[core]
 executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
 </code></pre>
-<h2 id="mesos-konfiguration"><a class="header" href="#mesos-konfiguration">Mesos-Konfiguration</a></h2>
-<p>Die Werte sind Beispiele. Hosts, Zugangsdaten und Images müssen an die eigene Umgebung angepasst werden.</p>
+<h2 id="mesos-configuration"><a class="header" href="#mesos-configuration">Mesos configuration</a></h2>
+<p>The values below are examples. Adapt hosts, credentials, and images to your environment.</p>
 <pre><code class="language-ini">[mesos]
 mesos_ssl = True
 master = mesos-master.example.invalid:5050
@@ -213,12 +213,12 @@ api_username = &lt;API_USERNAME&gt;
 api_password = &lt;API_PASSWORD&gt;
 operator_api_url = http://localhost:11000
 </code></pre>
-<p><code>operator_api_url</code> ist die Adresse, die der <code>MesosOperator</code> verwendet, wenn kein <code>airflow_scheduler_url</code> am Task gesetzt ist.</p>
-<h2 id="attribute"><a class="header" href="#attribute">Attribute</a></h2>
-<p>Globale Attribute gelten für Executor-Tasks. Task-spezifische Attribute werden vom Operator beziehungsweise <code>executor_config</code> ergänzt:</p>
+<p><code>operator_api_url</code> is the address used by <code>MesosOperator</code> when no <code>airflow_scheduler_url</code> is set on the task.</p>
+<h2 id="attributes"><a class="header" href="#attributes">Attributes</a></h2>
+<p>Global attributes apply to executor tasks. Task-specific attributes are added by the operator or through <code>executor_config</code>:</p>
 <pre><code class="language-ini">mesos_attributes = ["airflow:true", "gpu:true?:cpu:true"]
 </code></pre>
-<p>Ein Operator kann zusätzlich Folgendes angeben:</p>
+<p>An operator can specify additional attributes:</p>
 <pre><code class="language-python">MesosOperator(
     task_id="cpu_task",
     image="alpine:3.20",
@@ -226,7 +226,7 @@ operator_api_url = http://localhost:11000
     attributes=["cpu:true"],
 )
 </code></pre>
-<p>Keine Secrets oder produktiven Infrastrukturadressen in DAG-Dateien versionieren. Für Umgebungen sollten Airflow Connections, Variables oder externe Secret-Backends verwendet werden.</p>
+<p>Do not commit secrets or production infrastructure addresses in DAG files. Use Airflow Connections, Variables, or external secret backends for environment-specific values.</p>
 
                     </main>
 
