@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Installation - Airflow Mesos Provider</title>
+        <title>Tests und Entwicklung - Airflow Mesos Provider</title>
 
 
         <!-- Custom HTML head -->
@@ -174,48 +174,36 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
-<h2 id="paketinstallation"><a class="header" href="#paketinstallation">Paketinstallation</a></h2>
-<pre><code class="language-bash">pip install avmesos_airflow_provider
-</code></pre>
-<p>Der Provider benötigt außerdem eine kompatible Airflow-, <code>avmesos</code>- und HTTP-Umgebung. Für lokale Entwicklung stellt <code>shell.nix</code> eine reproduzierbare Umgebung bereit.</p>
-<h2 id="airflow-konfigurieren"><a class="header" href="#airflow-konfigurieren">Airflow konfigurieren</a></h2>
-<p>Für die Ausführung normaler Airflow-Tasks über Mesos:</p>
-<pre><code class="language-ini">[core]
-executor = avmesos_airflow_provider.executors.mesos_executor.MesosExecutor
-</code></pre>
-<p>Die vollständige Beispielkonfiguration steht in <a href="configuration.html">Konfiguration</a>.</p>
-<h2 id="lokale-entwicklung"><a class="header" href="#lokale-entwicklung">Lokale Entwicklung</a></h2>
+                        <h1 id="entwicklung-und-tests"><a class="header" href="#entwicklung-und-tests">Entwicklung und Tests</a></h1>
+<h2 id="nix-umgebung"><a class="header" href="#nix-umgebung">Nix-Umgebung</a></h2>
+<p>Die Datei <code>shell.nix</code> stellt Python, Airflow, PostgreSQL und die Provider-Abhängigkeiten bereit:</p>
 <pre><code class="language-bash">nix-shell
 </code></pre>
-<p>Die Nix-Shell installiert Airflow, <code>avmesos</code>, den Provider und PostgreSQL. Sie richtet außerdem die lokale Airflow-Datenbank und die DAG-Umgebung ein.</p>
-<h2 id="mesosoperator-verwenden"><a class="header" href="#mesosoperator-verwenden">MesosOperator verwenden</a></h2>
-<p>Der Operator benötigt keinen zweiten Executor. Der Airflow-Scheduler mit <code>MesosExecutor</code> stellt die interne API auf Port <code>11000</code> bereit. Ein Minimalbeispiel:</p>
-<pre><code class="language-python">from datetime import datetime
-
-from airflow import DAG
-from avmesos_airflow_provider.operators.mesos import MesosOperator
-
-with DAG("hello_mesos", schedule=None, start_date=datetime(2024, 1, 1), catchup=False) as dag:
-    MesosOperator(
-        task_id="hello",
-        image="alpine:3.20",
-        command="echo hello",
-        cpus=0.1,
-        mem_limit="128m",
-    )
+<p>Der Shell-Hook erstellt eine virtuelle Umgebung unter <code>/tmp/python-dev</code>, richtet die lokale Airflow-Datenbank ein und installiert den Provider editable.</p>
+<h2 id="unit-tests"><a class="header" href="#unit-tests">Unit-Tests</a></h2>
+<p>Die Unit-Tests verwenden synthetische HTTP-Antworten und benötigen keinen Mesos- oder Airflow-Live-Dienst:</p>
+<pre><code class="language-bash">make test
 </code></pre>
-<p>Details befinden sich in der <a href="operator.html">Operator-Referenz</a>.</p>
+<p>Der Test-Target nutzt:</p>
+<pre><code class="language-bash">python3 -m unittest discover -s tests -v
+</code></pre>
+<h2 id="build"><a class="header" href="#build">Build</a></h2>
+<pre><code class="language-bash">make build
+</code></pre>
+<p>Damit werden Source-Distribution und Wheel erzeugt. Vor dem Commit sollten mindestens <code>make test</code>, <code>make build</code> und <code>git diff --check</code> ausgeführt werden.</p>
+<h2 id="live-smoke-test"><a class="header" href="#live-smoke-test">Live-Smoke-Test</a></h2>
+<p>Für eine echte Integration kann das Test-DAG in Airflow geladen und manuell gestartet werden. Voraussetzungen sind ein laufender Airflow-Scheduler mit <code>MesosExecutor</code>, eine erreichbare Executor-API auf Port 11000 und ein Mesos-Cluster mit passenden Agent-Attributen.</p>
+<p>Die Mesos-Master-UI auf Port 5050 ist nur zur Beobachtung geeignet. Der Operator spricht nicht direkt mit der Master-UI.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="examples.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="architecture.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="troubleshooting.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -225,11 +213,11 @@ with DAG("hello_mesos", schedule=None, start_date=datetime(2024, 1, 1), catchup=
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="examples.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="architecture.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="troubleshooting.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
